@@ -35,3 +35,9 @@ app:
       generate-test-cases-path: /ai/generate-test-cases
       analyze-failure-path: /ai/analyze-failure
       explain-rule-path: /ai/explain-rule
+
+  report:
+    output-dir: reports
+
+  scheduler:
+    poll-interval-ms: 60000
