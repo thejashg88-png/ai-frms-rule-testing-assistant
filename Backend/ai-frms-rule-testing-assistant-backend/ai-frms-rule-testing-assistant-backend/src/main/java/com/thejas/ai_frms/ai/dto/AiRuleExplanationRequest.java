@@ -1,25 +1,25 @@
-package com.thejas.ai_frms.frmsintegration.dto;
+package com.thejas.ai_frms.ai.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.thejas.ai_frms.common.enums.RuleAction;
 import com.thejas.ai_frms.common.enums.RuleStatus;
 
 import java.math.BigDecimal;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class FrmsRuleResponse {
+public class AiRuleExplanationRequest {
 
     private Long ruleId;
     private String ruleName;
     private String ruleType;
     private RuleAction action;
     private RuleStatus status;
+
     private String mccCode;
     private Integer txnCount;
     private Integer frequencyHours;
     private BigDecimal txnAmount;
     private BigDecimal maxAmount;
     private BigDecimal percentageThreshold;
+
     private String ruleDescription;
 
     public Long getRuleId() {

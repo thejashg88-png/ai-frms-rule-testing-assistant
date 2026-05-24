@@ -1,26 +1,35 @@
-package com.thejas.ai_frms.frmsintegration.dto;
+package com.thejas.ai_frms.ai.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.thejas.ai_frms.common.enums.RuleAction;
-import com.thejas.ai_frms.common.enums.RuleStatus;
 
 import java.math.BigDecimal;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class FrmsRuleResponse {
+public class AiTestCaseGenerationRequest {
 
     private Long ruleId;
+    private Long scenarioId;
+
     private String ruleName;
     private String ruleType;
     private RuleAction action;
-    private RuleStatus status;
+    private String status;
     private String mccCode;
+
     private Integer txnCount;
     private Integer frequencyHours;
     private BigDecimal txnAmount;
     private BigDecimal maxAmount;
     private BigDecimal percentageThreshold;
+
     private String ruleDescription;
+
+    private Integer numberOfTestCases = 5;
+    private Boolean includePositiveCases = true;
+    private Boolean includeNegativeCases = true;
+    private Boolean includeBoundaryCases = true;
+    private Boolean includeEdgeCases = true;
+
+    private String createdBy;
 
     public Long getRuleId() {
         return ruleId;
@@ -28,6 +37,14 @@ public class FrmsRuleResponse {
 
     public void setRuleId(Long ruleId) {
         this.ruleId = ruleId;
+    }
+
+    public Long getScenarioId() {
+        return scenarioId;
+    }
+
+    public void setScenarioId(Long scenarioId) {
+        this.scenarioId = scenarioId;
     }
 
     public String getRuleName() {
@@ -54,11 +71,11 @@ public class FrmsRuleResponse {
         this.action = action;
     }
 
-    public RuleStatus getStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(RuleStatus status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 
@@ -116,5 +133,53 @@ public class FrmsRuleResponse {
 
     public void setRuleDescription(String ruleDescription) {
         this.ruleDescription = ruleDescription;
+    }
+
+    public Integer getNumberOfTestCases() {
+        return numberOfTestCases;
+    }
+
+    public void setNumberOfTestCases(Integer numberOfTestCases) {
+        this.numberOfTestCases = numberOfTestCases;
+    }
+
+    public Boolean getIncludePositiveCases() {
+        return includePositiveCases;
+    }
+
+    public void setIncludePositiveCases(Boolean includePositiveCases) {
+        this.includePositiveCases = includePositiveCases;
+    }
+
+    public Boolean getIncludeNegativeCases() {
+        return includeNegativeCases;
+    }
+
+    public void setIncludeNegativeCases(Boolean includeNegativeCases) {
+        this.includeNegativeCases = includeNegativeCases;
+    }
+
+    public Boolean getIncludeBoundaryCases() {
+        return includeBoundaryCases;
+    }
+
+    public void setIncludeBoundaryCases(Boolean includeBoundaryCases) {
+        this.includeBoundaryCases = includeBoundaryCases;
+    }
+
+    public Boolean getIncludeEdgeCases() {
+        return includeEdgeCases;
+    }
+
+    public void setIncludeEdgeCases(Boolean includeEdgeCases) {
+        this.includeEdgeCases = includeEdgeCases;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
     }
 }

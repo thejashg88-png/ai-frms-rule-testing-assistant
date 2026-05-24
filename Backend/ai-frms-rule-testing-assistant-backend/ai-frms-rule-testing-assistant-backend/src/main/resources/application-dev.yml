@@ -12,6 +12,7 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+    open-in-view: false
     properties:
       hibernate:
         format_sql: true
@@ -26,5 +27,11 @@ app:
   integration:
     frms:
       base-url: http://localhost:8083
+      evaluate-risk-path: /frm/evaluateRisk
+      rule-by-id-path: /frm/rules/{ruleId}
+
     ai:
       base-url: http://localhost:8000
+      generate-test-cases-path: /ai/generate-test-cases
+      analyze-failure-path: /ai/analyze-failure
+      explain-rule-path: /ai/explain-rule
