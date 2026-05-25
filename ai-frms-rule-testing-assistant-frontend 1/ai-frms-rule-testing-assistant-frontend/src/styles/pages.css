@@ -1,0 +1,413 @@
+/* ============================================================
+   Shared page-level styles
+   Imported by every page component
+   ============================================================ */
+
+/* ── Login ── */
+.login-page {
+  min-height: 100vh;
+}
+
+.login-card {
+  animation: slideUp 0.4s ease-out;
+}
+
+.login-title {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.login-subtitle {
+  margin: 0 0 24px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.login-button {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.login-footer {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ── Dashboard ── */
+.dashboard-page {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ── Rules ── */
+.rules-page {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Filter bar */
+.rules-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.rules-search-wrapper {
+  flex: 1;
+  min-width: 220px;
+}
+
+.rules-filter-select-wrapper {
+  width: 160px;
+  flex-shrink: 0;
+}
+
+/* Strip bottom margin from Input/Select when inside filter bar */
+.rules-filters .input-wrapper,
+.rules-filters .select-wrapper {
+  margin-bottom: 0;
+}
+
+/* Rule form layout */
+.rule-form-section {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.rule-form-section-last {
+  border-bottom: none;
+  margin-bottom: 8px;
+}
+
+.rule-form-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 16px;
+}
+
+.rule-form-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: -8px 0 16px;
+}
+
+.rule-form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0 20px;
+}
+
+.rule-form-actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+/* ── 404 / Error ── */
+.error-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.error-container {
+  text-align: center;
+  background: white;
+  padding: 40px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  max-width: 500px;
+  animation: slideUp 0.4s ease-out;
+}
+
+.error-code {
+  margin: 0;
+  font-size: 72px;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.error-title {
+  margin: 16px 0 8px;
+  font-size: 24px;
+  color: var(--text-primary);
+}
+
+.error-message {
+  margin: 0 0 24px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.error-container button {
+  min-width: 200px;
+}
+
+/* ── Sign Up ── */
+.signup-page {
+  display: flex;
+  min-height: 560px;
+  animation: slideUp 0.4s ease-out;
+}
+
+/* Left brand panel */
+.signup-brand {
+  flex: 0 0 320px;
+  background: linear-gradient(160deg, #0f172a 0%, #1e3a5f 55%, #0e7490 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 36px;
+  border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+}
+
+.signup-brand-inner {
+  color: #fff;
+  width: 100%;
+}
+
+.signup-shield-icon {
+  color: #06b6d4;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 0 12px rgba(6, 182, 212, 0.4));
+}
+
+.signup-brand-titles {
+  margin-bottom: 24px;
+}
+
+.signup-product-name {
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 4px;
+  letter-spacing: -0.4px;
+}
+
+.signup-tagline {
+  font-size: 12px;
+  color: #7dd3fc;
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.signup-brand-divider {
+  width: 36px;
+  height: 2px;
+  background: linear-gradient(90deg, #06b6d4, #8b5cf6);
+  margin-bottom: 24px;
+  border-radius: 2px;
+}
+
+.signup-feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.signup-feature-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.signup-feature-icon {
+  color: #06b6d4;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.signup-brand-footer {
+  font-size: 11px;
+  color: #475569;
+  margin: 0;
+}
+
+/* Right form panel */
+.signup-form-panel {
+  flex: 1;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 36px;
+  border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
+}
+
+.signup-form-inner {
+  width: 100%;
+  max-width: 340px;
+}
+
+.signup-form-title {
+  font-size: 21px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.signup-form-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 22px;
+}
+
+.signup-submit-btn {
+  width: 100%;
+  margin-top: 6px;
+}
+
+.signup-signin-link {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.signup-signin-link a {
+  color: var(--primary);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.signup-signin-link a:hover {
+  text-decoration: underline;
+}
+
+/* Success state */
+.signup-success-state {
+  text-align: center;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.signup-success-icon {
+  color: var(--secondary);
+}
+
+.signup-success-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.signup-success-sub {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 14px;
+}
+
+/* ── Password field with show/hide toggle ── */
+.password-field-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-field-wrap .input {
+  width: 100%;
+  padding-right: 44px;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.password-toggle-btn:hover {
+  color: #374151;
+}
+
+/* ── Inline auth API error banner ── */
+.auth-api-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+/* ── Keyframes ── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .login-card { padding: 24px !important; }
+
+  .rules-filter-select-wrapper { width: 100%; }
+  .rules-search-wrapper         { width: 100%; }
+
+  .rule-form-grid-3 { grid-template-columns: 1fr; }
+
+  .error-container { margin: 20px; padding: 24px; }
+  .error-code  { font-size: 48px; }
+  .error-title { font-size: 18px; }
+
+  /* Signup responsive — stack vertically */
+  .signup-page {
+    flex-direction: column;
+    min-height: unset;
+  }
+
+  .signup-brand {
+    flex: none;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    padding: 32px 24px;
+  }
+
+  .signup-feature-list {
+    display: none;
+  }
+
+  .signup-form-panel {
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+    padding: 28px 24px;
+  }
+
+  .signup-form-inner {
+    max-width: 100%;
+  }
+}
