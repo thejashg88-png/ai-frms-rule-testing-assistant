@@ -4,6 +4,12 @@ import errorHandlerService from './errorHandlerService'
 const isMock = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
 const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms))
 
+const mapTransaction = (t) => ({
+  ...t,
+  id: t.transactionId ?? t.id,
+  status: t.transactionStatus ?? t.status,
+})
+
 let nextId = 20
 const mockStore = [
   {
@@ -76,7 +82,11 @@ const applyFilters = (data, params) => {
 export const transactionService = {
   getAll: async (params = {}) => {
     if (isMock) { await delay(); return applyFilters(mockStore, params) }
-    try { return await transactionApi.getAll(params) }
+    try {
+      const resp = await transactionApi.getAll(params)
+      const items = resp?.data?.content ?? (Array.isArray(resp?.data) ? resp.data : [])
+      return items.map(mapTransaction)
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 
@@ -87,7 +97,10 @@ export const transactionService = {
       if (!t) throw new Error('Transaction not found')
       return t
     }
-    try { return await transactionApi.getById(id) }
+    try {
+      const resp = await transactionApi.getById(id)
+      return mapTransaction(resp?.data ?? resp)
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 
@@ -98,7 +111,10 @@ export const transactionService = {
       mockStore.push(t)
       return t
     }
-    try { return await transactionApi.create(data) }
+    try {
+      const resp = await transactionApi.create(data)
+      return mapTransaction(resp?.data ?? resp)
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 

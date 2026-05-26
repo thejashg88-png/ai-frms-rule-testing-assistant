@@ -4,18 +4,10 @@ import Card from '../../components/common/Card'
 import Table from '../../components/common/Table'
 import Badge from '../../components/common/Badge'
 import Loader from '../../components/common/Loader'
+import ErrorMessage from '../../components/common/ErrorMessage'
 import DashboardSummaryCards from '../../components/dashboard/DashboardSummaryCards'
+import dashboardService from '../../services/dashboardService'
 import '../../styles/pages.css'
-
-const MOCK_ACTIVITY = [
-  { id: 1, ruleName: 'Credit Limit Check',     ruleType: 'CREDIT',   status: 'PASSED',  executedBy: 'admin',   date: '2025-05-24' },
-  { id: 2, ruleName: 'High Value TX Alert',    ruleType: 'AMOUNT',   status: 'FAILED',  executedBy: 'tester1', date: '2025-05-24' },
-  { id: 3, ruleName: 'Card Velocity Rule',     ruleType: 'VELOCITY', status: 'PASSED',  executedBy: 'admin',   date: '2025-05-23' },
-  { id: 4, ruleName: 'Geo Mismatch Detect',    ruleType: 'GEO',      status: 'PASSED',  executedBy: 'tester2', date: '2025-05-23' },
-  { id: 5, ruleName: 'Duplicate TXN Check',    ruleType: 'FRAUD',    status: 'FAILED',  executedBy: 'admin',   date: '2025-05-22' },
-  { id: 6, ruleName: 'Foreign Card Rule',      ruleType: 'CARD',     status: 'PASSED',  executedBy: 'tester1', date: '2025-05-22' },
-  { id: 7, ruleName: 'Frequency Limit Rule',   ruleType: 'VELOCITY', status: 'PENDING', executedBy: 'admin',   date: '2025-05-21' },
-]
 
 const STATUS_COLORS = {
   PASSED:  { bg: '#dcfce7', color: '#16a34a' },
@@ -24,18 +16,36 @@ const STATUS_COLORS = {
 }
 
 const activityColumns = [
-  { key: 'ruleName', label: 'Rule Name' },
-  { key: 'ruleType', label: 'Type', width: '110px',
+  { key: 'entityName', label: 'Test / Scenario Name' },
+  {
+    key: 'executionType',
+    label: 'Type',
+    width: '120px',
     render: (val) => (
-      <Badge bgColor="#eff6ff" color="#2563eb" size="sm">{val}</Badge>
+      <Badge bgColor="#eff6ff" color="#2563eb" size="sm">
+        {val?.replace('_', ' ') ?? '-'}
+      </Badge>
     ),
   },
-  { key: 'executedBy', label: 'By', width: '100px' },
-  { key: 'date', label: 'Date', width: '110px' },
-  { key: 'status', label: 'Status', width: '100px',
+  {
+    key: 'executedAt',
+    label: 'Date',
+    width: '110px',
+    render: (val) => val ? val.split('T')[0] : '-',
+  },
+  {
+    key: 'durationMs',
+    label: 'Duration',
+    width: '90px',
+    render: (val) => val != null ? `${val}ms` : '-',
+  },
+  {
+    key: 'status',
+    label: 'Status',
+    width: '100px',
     render: (val) => {
-      const c = STATUS_COLORS[val] ?? {}
-      return <Badge bgColor={c.bg} color={c.color} size="sm">{val}</Badge>
+      const c = STATUS_COLORS[val] ?? { bg: '#f1f5f9', color: '#475569' }
+      return <Badge bgColor={c.bg} color={c.color} size="sm">{val ?? '-'}</Badge>
     },
   },
 ]
@@ -48,22 +58,43 @@ const StatRow = ({ label, value, tone }) => (
 )
 
 const DashboardPage = () => {
+  const [summary, setSummary] = useState(null)
+  const [recentExecutions, setRecentExecutions] = useState([])
   const [loading, setLoading] = useState(true)
-  const stats = {
-    totalRules: 45,
-    activeRules: 38,
-    totalTests: 156,
-    passedTests: 142,
-    failedTests: 14,
-    successRate: 91,
+  const [error, setError] = useState(null)
+
+  const load = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const [summaryData, executionsData] = await Promise.all([
+        dashboardService.getSummary(),
+        dashboardService.getRecentExecutions(7),
+      ])
+      setSummary(summaryData)
+      setRecentExecutions(executionsData)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 400)
-    return () => clearTimeout(t)
-  }, [])
+  useEffect(() => { load() }, [])
 
   if (loading) return <Loader message="Loading dashboard..." />
+  if (error) return <ErrorMessage title="Failed to load dashboard" message={error} onRetry={load} />
+
+  const stats = {
+    totalRules:   summary?.totalRules    ?? 0,
+    activeRules:  summary?.activeRules   ?? 0,
+    totalTests:   summary?.totalTestCases ?? 0,
+    successRate:  Math.round(summary?.passRate ?? 0),
+  }
+
+  const totalExec   = summary?.totalExecutions   ?? 0
+  const passedExec  = summary?.passedExecutions  ?? 0
+  const failedExec  = summary?.failedExecutions  ?? 0
 
   return (
     <div className="dashboard-page">
@@ -78,12 +109,12 @@ const DashboardPage = () => {
         {/* ── Recent Activity (main column) ── */}
         <Card
           title="Recent Test Executions"
-          subtitle="Latest rule test runs across all users"
+          subtitle="Latest rule test runs"
           noPadding
         >
           <Table
             columns={activityColumns}
-            data={MOCK_ACTIVITY}
+            data={recentExecutions}
             emptyMessage="No executions yet."
           />
         </Card>
@@ -92,18 +123,18 @@ const DashboardPage = () => {
         <div className="dashboard-side-stack">
           <Card title="Execution Summary">
             <div className="stat-list">
-              <StatRow label="Total Executions" value={stats.totalTests} tone="blue" />
-              <StatRow label="Passed"           value={stats.passedTests} tone="positive" />
-              <StatRow label="Failed"           value={stats.failedTests} tone="negative" />
+              <StatRow label="Total Executions" value={totalExec}   tone="blue" />
+              <StatRow label="Passed"           value={passedExec}  tone="positive" />
+              <StatRow label="Failed"           value={failedExec}  tone="negative" />
               <StatRow label="Success Rate"     value={`${stats.successRate}%`} tone="positive" />
             </div>
           </Card>
 
           <Card title="Rules Overview">
             <div className="stat-list">
-              <StatRow label="Total Rules"    value={stats.totalRules} tone="blue" />
-              <StatRow label="Active"         value={stats.activeRules} tone="positive" />
-              <StatRow label="Inactive"       value={stats.totalRules - stats.activeRules} />
+              <StatRow label="Total Rules" value={stats.totalRules}  tone="blue" />
+              <StatRow label="Active"      value={stats.activeRules} tone="positive" />
+              <StatRow label="Inactive"    value={stats.totalRules - stats.activeRules} />
             </div>
           </Card>
         </div>

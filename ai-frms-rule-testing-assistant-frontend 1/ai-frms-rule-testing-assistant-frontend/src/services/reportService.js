@@ -50,13 +50,19 @@ const mockRuleReport = {
 export const reportService = {
   getExecutionReport: async (params = {}) => {
     if (isMock) { await delay(); return mockExecutionReport }
-    try { return await reportApi.getExecutionReport(params) }
+    try {
+      const resp = await reportApi.getExecutionReport(params)
+      return resp?.data ?? resp
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 
   getRuleReport: async (params = {}) => {
     if (isMock) { await delay(); return mockRuleReport }
-    try { return await reportApi.getRuleReport(params) }
+    try {
+      const resp = await reportApi.getRuleReport(params)
+      return resp?.data ?? resp
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 

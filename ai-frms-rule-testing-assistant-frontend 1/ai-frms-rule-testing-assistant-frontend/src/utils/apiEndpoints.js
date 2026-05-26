@@ -39,25 +39,40 @@ export const API_ENDPOINTS = {
 
   // Test Cases endpoints
   TEST_CASES: {
-    LIST: '/test-cases',
-    GET: (id) => `/test-cases/${id}`,
-    CREATE: '/test-cases',
-    UPDATE: (id) => `/test-cases/${id}`,
-    DELETE: (id) => `/test-cases/${id}`,
+    LIST: '/testcases',
+    GET: (id) => `/testcases/${id}`,
+    CREATE: '/testcases',
+    UPDATE: (id) => `/testcases/${id}`,
+    DELETE: (id) => `/testcases/${id}`,
   },
 
   // Executions endpoints
   EXECUTIONS: {
     LIST: '/executions',
     GET: (id) => `/executions/${id}`,
-    EXECUTE_TEST: '/executions/test',
-    EXECUTE_SCENARIO: '/executions/scenario',
+    RUN_TEST_CASE: (id) => `/executions/run-testcase/${id}`,
+    RUN_SCENARIO: (id) => `/executions/run-scenario/${id}`,
+    STATS: '/executions/stats',
   },
 
   // Dashboard endpoints
   DASHBOARD: {
     SUMMARY: '/dashboard/summary',
-    CHARTS: '/dashboard/charts',
+    RECENT_EXECUTIONS: '/dashboard/recent-executions',
+  },
+
+  // Reports endpoints
+  REPORTS: {
+    SUMMARY: '/reports/summary',
+    EXECUTIONS: '/reports/executions',
+  },
+
+  // AI endpoints
+  AI: {
+    GENERATE_TEST_CASES: '/ai/generate-test-cases',
+    EXPLAIN_RULE: '/ai/explain-rule',
+    ANALYZE_FAILURE: '/ai/analyze-failure',
+    GENERATE_TRANSACTION: '/ai/generate-transaction',
   },
 }
 

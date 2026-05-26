@@ -4,6 +4,33 @@ import errorHandlerService from './errorHandlerService'
 const isMock = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
 const delay = (ms = 1500) => new Promise((r) => setTimeout(r, ms))
 
+const normalizeArray = (value) => {
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string' && value.trim()) return [value]
+  if (value && typeof value === 'object') return Object.values(value).filter(Boolean)
+  return []
+}
+
+const normalizeExplainRuleResponse = (apiResponse) => {
+  const data = apiResponse?.data || apiResponse
+
+  console.log('[normalizeExplainRuleResponse input]', apiResponse)
+  console.log('[normalizeExplainRuleResponse extracted data]', data)
+
+  return {
+    explanation:        data?.explanation      || data?.summary          || 'No explanation available.',
+    summary:            data?.summary          || data?.explanation      || 'No summary available.',
+    businessMeaning:    data?.businessMeaning  || 'No business meaning available.',
+    technicalMeaning:   data?.technicalMeaning || 'No technical meaning available.',
+    exampleScenario:    data?.exampleScenario  || 'No example scenario available.',
+    riskLevel:          data?.riskLevel        || 'MEDIUM',
+    recommendations:    normalizeArray(data?.recommendations || data?.riskNotes),
+    riskNotes:          normalizeArray(data?.riskNotes       || data?.recommendations),
+    edgeCases:          normalizeArray(data?.edgeCases),
+    suggestedTestCases: normalizeArray(data?.suggestedTestCases),
+  }
+}
+
 const MOCK_EXPLANATIONS = {
   CREDIT: 'This rule evaluates the customer\'s credit utilization. When the transaction amount exceeds the configured maxAmount threshold or when combined with existing credit usage surpasses the percentageThreshold, the rule triggers a REJECT action to prevent over-limit transactions.',
   AMOUNT: 'This rule monitors transaction amounts for compliance review. Transactions exceeding the configured maxAmount are flagged for MONITOR action, notifying the compliance team without blocking the transaction flow.',
@@ -45,7 +72,10 @@ export const aiService = {
         explanation: `Based on the ${ruleType} rule parameters, I identified 3 critical test cases covering the accept boundary, reject threshold, and monitor edge case. These cover the most common failure scenarios for ${ruleType} rules in a payment processing system.`,
       }
     }
-    try { return await aiApi.generateTestCases({ ruleId, ruleName, ruleType }) }
+    try {
+      const resp = await aiApi.generateTestCases({ ruleId, ruleName, ruleType })
+      return resp?.data ?? resp
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 
@@ -63,7 +93,29 @@ export const aiService = {
         riskLevel: rule?.action === 'REJECT' ? 'HIGH' : 'MEDIUM',
       }
     }
-    try { return await aiApi.explainRule(rule?.id) }
+    try {
+      const payload = {
+        ruleId:              rule?.id,
+        ruleName:            rule?.ruleName     || rule?.name        || rule?.title || '',
+        ruleType:            rule?.ruleType,
+        action:              rule?.action       || 'MONITOR',
+        maxAmount:           rule?.maxAmount    ?? null,
+        txnAmount:           rule?.txnAmount    ?? null,
+        txnCount:            rule?.txnCount     ?? null,
+        frequency:           rule?.frequency    ?? null,
+        percentageThreshold: rule?.percentageThreshold ?? null,
+        description:         rule?.ruleDescription || rule?.description || '',
+      }
+      console.log('[AI Explain Rule Payload]', payload)
+      const apiResponse = await aiApi.explainRule(payload)
+      console.log('[aiService.explainRule apiResponse]', apiResponse)
+      if (apiResponse?.success === false) {
+        throw new Error(apiResponse?.message || 'AI service returned an error.')
+      }
+      const normalized = normalizeExplainRuleResponse(apiResponse)
+      console.log('[AI Explain normalized]', normalized)
+      return normalized
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 
@@ -81,7 +133,10 @@ export const aiService = {
         confidence: 0.87,
       }
     }
-    try { return await aiApi.analyzeFailure(execution?.id) }
+    try {
+      const resp = await aiApi.analyzeFailure({ executionId: execution?.id })
+      return resp?.data ?? resp
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 
@@ -111,8 +166,41 @@ export const aiService = {
         explanation: 'AI-generated transaction based on your specified parameters and typical fraud pattern distributions.',
       }
     }
-    try { return await aiApi.generateTransaction(hints) }
+    try {
+      const resp = await aiApi.generateTransaction(hints)
+      return resp?.data ?? resp
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
+  },
+
+  generateRule: async (requirement) => {
+    if (isMock) {
+      await delay(2000)
+      return {
+        ruleName: 'High Frequency Transaction Monitor',
+        ruleDescription: 'Monitors accounts making more than 3 transactions below ₹50,000 within a 24-hour window to detect potential structuring activity.',
+        ruleType: 'VELOCITY',
+        action: 'MONITOR',
+        status: 'ACTIVE',
+        txnCount: 3,
+        txnAmount: '000000050000',
+        frequency: 24,
+        maxAmount: null,
+        percentageThreshold: null,
+        explanation: 'This rule targets transaction structuring behavior where amounts are deliberately kept below reporting thresholds. Monitoring frequent sub-threshold transactions helps compliance teams identify potential money laundering and structuring patterns before they escalate.',
+        riskNotes: [
+          'Cross-reference with customer risk profile before escalating a flagged account.',
+          'High false-positive rate expected for retail merchants — tune txnCount based on observed baselines.',
+          'Align the 24-hour frequency window with your regulatory reporting cycle for accurate SARs.',
+        ],
+      }
+    }
+    try {
+      const resp = await aiApi.generateRule(requirement)
+      return resp?.data ?? resp
+    } catch (err) {
+      throw new Error(errorHandlerService.getErrorMessage(err))
+    }
   },
 
   chat: async (message, context = {}) => {
@@ -123,7 +211,10 @@ export const aiService = {
         context: {},
       }
     }
-    try { return await aiApi.chat(message, context) }
+    try {
+      const resp = await aiApi.chat(message, context)
+      return resp?.data ?? resp
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 }

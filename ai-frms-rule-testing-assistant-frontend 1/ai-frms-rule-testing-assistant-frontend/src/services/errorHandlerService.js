@@ -1,6 +1,11 @@
 export const errorHandlerService = {
-  // Get error message from various error types
+  // Get error message from various error types and log full error to console
   getErrorMessage: (error) => {
+    console.error('[FRMS API Error]', error)
+    if (error?.response?.data) {
+      console.error('[FRMS API Error Response Body]', error.response.data)
+    }
+
     if (typeof error === 'string') {
       return error
     }
@@ -11,6 +16,10 @@ export const errorHandlerService = {
 
     if (error.response?.data?.error) {
       return error.response.data.error
+    }
+
+    if (!error.response && error.message) {
+      return `Network error: ${error.message}. Please check your connection and ensure the backend is running.`
     }
 
     if (error.message) {

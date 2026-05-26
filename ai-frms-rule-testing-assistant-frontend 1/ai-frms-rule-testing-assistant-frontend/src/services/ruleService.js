@@ -4,6 +4,35 @@ import errorHandlerService from './errorHandlerService'
 const isMock = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
 const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms))
 
+const mapRule = (r) => ({
+  ...r,
+  id:          r.ruleId       ?? r.id,
+  name:        r.ruleName     ?? r.name,
+  description: r.ruleDescription ?? r.description,
+  frequency:   r.frequencyHours  ?? r.frequency,
+})
+
+const numOrNull = (v) => (v === '' || v === null || v === undefined ? null : Number(v))
+
+// Converts internal form shape → backend DTO field names + formats
+const toApiPayload = (data) => {
+  const txnAmountRaw = numOrNull(data.txnAmount ?? data.txnAmountRaw)
+  const payload = {
+    ruleName:            (data.ruleName     ?? data.name        ?? '').trim(),
+    ruleDescription:     (data.ruleDescription ?? data.description ?? '').trim(),
+    ruleType:            data.ruleType,
+    action:              data.action,
+    status:              data.status ?? 'ACTIVE',
+    txnCount:            numOrNull(data.txnCount),
+    txnAmount:           txnAmountRaw != null ? String(txnAmountRaw).padStart(12, '0') : null,
+    frequency:           numOrNull(data.frequency),
+    maxAmount:           numOrNull(data.maxAmount),
+    percentageThreshold: numOrNull(data.percentageThreshold),
+  }
+  console.log('[Create Rule Payload]', payload)
+  return payload
+}
+
 let nextId = 10
 const mockStore = [
   {
@@ -77,7 +106,9 @@ export const ruleService = {
       return applyFilters(mockStore, params)
     }
     try {
-      return await ruleApi.getAllRules(params)
+      const resp = await ruleApi.getAllRules(params)
+      const items = resp?.data?.content ?? (Array.isArray(resp?.data) ? resp.data : [])
+      return items.map(mapRule)
     } catch (err) {
       throw new Error(errorHandlerService.getErrorMessage(err))
     }
@@ -91,7 +122,8 @@ export const ruleService = {
       return rule
     }
     try {
-      return await ruleApi.getRuleById(id)
+      const resp = await ruleApi.getRuleById(id)
+      return mapRule(resp?.data ?? resp)
     } catch (err) {
       throw new Error(errorHandlerService.getErrorMessage(err))
     }
@@ -109,8 +141,11 @@ export const ruleService = {
       return rule
     }
     try {
-      return await ruleApi.createRule(data)
+      const payload = toApiPayload(data)
+      const resp = await ruleApi.createRule(payload)
+      return mapRule(resp?.data ?? resp)
     } catch (err) {
+      console.error('[Create Rule Error Response]', err.response?.data)
       throw new Error(errorHandlerService.getErrorMessage(err))
     }
   },
@@ -124,8 +159,11 @@ export const ruleService = {
       return mockStore[idx]
     }
     try {
-      return await ruleApi.updateRule(id, data)
+      const payload = toApiPayload(data)
+      const resp = await ruleApi.updateRule(id, payload)
+      return mapRule(resp?.data ?? resp)
     } catch (err) {
+      console.error('[Update Rule Error Response]', err.response?.data)
       throw new Error(errorHandlerService.getErrorMessage(err))
     }
   },

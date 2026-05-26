@@ -4,6 +4,15 @@ import errorHandlerService from './errorHandlerService'
 const isMock = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
 const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms))
 
+const mapExecution = (e) => ({
+  ...e,
+  id: e.executionId ?? e.id,
+  status: e.executionStatus != null ? String(e.executionStatus) : (e.status ?? null),
+  entityId: e.testCaseId ?? e.scenarioId ?? e.entityId,
+  entityName: e.testCaseName ?? e.scenarioName ?? e.entityName,
+  executedAt: e.startedAt ?? e.executedAt,
+})
+
 let nextId = 30
 const mockStore = [
   {
@@ -62,7 +71,11 @@ const STATUSES = ['PASSED', 'FAILED', 'PASSED', 'PASSED']
 export const executionService = {
   getAll: async (params = {}) => {
     if (isMock) { await delay(); return applyFilters(mockStore, params) }
-    try { return await executionApi.getAll(params) }
+    try {
+      const resp = await executionApi.getAll(params)
+      const items = resp?.data?.content ?? (Array.isArray(resp?.data) ? resp.data : [])
+      return items.map(mapExecution)
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 
@@ -73,7 +86,10 @@ export const executionService = {
       if (!e) throw new Error('Execution not found')
       return e
     }
-    try { return await executionApi.getById(id) }
+    try {
+      const resp = await executionApi.getById(id)
+      return mapExecution(resp?.data ?? resp)
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 
@@ -96,7 +112,10 @@ export const executionService = {
       mockStore.unshift(execution)
       return execution
     }
-    try { return await executionApi.runTestCase(testCaseId) }
+    try {
+      const resp = await executionApi.runTestCase(testCaseId)
+      return mapExecution(resp?.data ?? resp)
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 
@@ -118,7 +137,10 @@ export const executionService = {
       mockStore.unshift(execution)
       return execution
     }
-    try { return await executionApi.runScenario(scenarioId) }
+    try {
+      const resp = await executionApi.runScenario(scenarioId)
+      return mapExecution(resp?.data ?? resp)
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 }

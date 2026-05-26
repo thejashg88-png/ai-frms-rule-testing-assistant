@@ -6,18 +6,26 @@ export const aiApi = {
     return response.data
   },
 
-  explainRule: async (ruleId) => {
-    const response = await axiosInstance.get(`/ai/explain-rule/${ruleId}`)
+  explainRule: async (data) => {
+    console.log('[aiApi.explainRule request payload]', data)
+    const response = await axiosInstance.post('/ai/explain-rule', data)
+    console.log('[aiApi.explainRule axios full response]', response)
+    console.log('[aiApi.explainRule response.data]', response.data)
     return response.data
   },
 
-  analyzeFailure: async (executionId) => {
-    const response = await axiosInstance.get(`/ai/analyze-failure/${executionId}`)
+  analyzeFailure: async (data) => {
+    const response = await axiosInstance.post('/ai/analyze-failure', data)
     return response.data
   },
 
   generateTransaction: async (data) => {
     const response = await axiosInstance.post('/ai/generate-transaction', data)
+    return response.data
+  },
+
+  generateRule: async (requirement) => {
+    const response = await axiosInstance.post('/ai/generate-rule', { requirement })
     return response.data
   },
 

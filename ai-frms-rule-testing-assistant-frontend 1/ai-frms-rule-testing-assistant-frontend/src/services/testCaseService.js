@@ -4,6 +4,13 @@ import errorHandlerService from './errorHandlerService'
 const isMock = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
 const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms))
 
+const mapTestCase = (t) => ({
+  ...t,
+  id: t.testCaseId ?? t.id,
+  name: t.testCaseName ?? t.name,
+  description: t.testCaseDescription ?? t.description,
+})
+
 let nextId = 20
 const mockStore = [
   {
@@ -79,7 +86,11 @@ const applyFilters = (data, params) => {
 export const testCaseService = {
   getAll: async (params = {}) => {
     if (isMock) { await delay(); return applyFilters(mockStore, params) }
-    try { return await testCaseApi.getAll(params) }
+    try {
+      const resp = await testCaseApi.getAll(params)
+      const items = resp?.data?.content ?? (Array.isArray(resp?.data) ? resp.data : [])
+      return items.map(mapTestCase)
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 
@@ -90,7 +101,10 @@ export const testCaseService = {
       if (!t) throw new Error('Test case not found')
       return t
     }
-    try { return await testCaseApi.getById(id) }
+    try {
+      const resp = await testCaseApi.getById(id)
+      return mapTestCase(resp?.data ?? resp)
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 
@@ -101,7 +115,10 @@ export const testCaseService = {
       mockStore.push(t)
       return t
     }
-    try { return await testCaseApi.create(data) }
+    try {
+      const resp = await testCaseApi.create(data)
+      return mapTestCase(resp?.data ?? resp)
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 
@@ -113,7 +130,10 @@ export const testCaseService = {
       mockStore[idx] = { ...mockStore[idx], ...data }
       return mockStore[idx]
     }
-    try { return await testCaseApi.update(id, data) }
+    try {
+      const resp = await testCaseApi.update(id, data)
+      return mapTestCase(resp?.data ?? resp)
+    }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 
