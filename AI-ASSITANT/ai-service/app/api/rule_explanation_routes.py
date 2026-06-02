@@ -1,3 +1,10 @@
+"""
+Route: POST /api/ai/explain-rule
+
+Called by Spring Boot when the user requests an explanation for a configured fraud rule.
+Delegates to RuleExplainerService which selects the appropriate LLM provider.
+Response data fields: summary, businessMeaning, technicalMeaning, exampleScenario, riskNotes.
+"""
 from fastapi import APIRouter, HTTPException
 from loguru import logger
 

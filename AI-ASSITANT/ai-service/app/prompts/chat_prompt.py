@@ -1,3 +1,17 @@
+"""
+Prompt builder for POST /api/ai/chat (Groq provider path).
+
+Unlike the other prompts which require structured JSON output, the chat prompt
+produces plain text — the user is asking a conversational question, not requesting
+a machine-readable payload. generate_text_response() is used instead of
+generate_json_response() (temperature=0.7 for natural-sounding replies).
+
+The system prompt keeps the LLM focused on FRMS-specific topics:
+  - Rule types and their configuration fields
+  - Test case design (ACCEPT/MONITOR/REJECT)
+  - Debugging guidance for failed test executions
+  - Rule engine behavior and threshold logic
+"""
 from __future__ import annotations
 
 import json

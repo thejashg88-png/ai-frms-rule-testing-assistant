@@ -11,6 +11,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Evaluates all ACTIVE fraud rules against a transaction amount and returns the highest-severity result.
+ *
+ * Priority when multiple rules match the same transaction:
+ *   REJECT (3) > MONITOR (2) > ACCEPT (1)
+ *
+ * The rule with the highest severity action becomes the triggeredRule in the response.
+ * If no rule matches, the result is ACCEPT with triggeredRuleName = null.
+ *
+ * Currently supported rule types: SINGLE_LARGE_TX
+ * Other rule types (HIGH_FREQ, SEQUENTIAL_TXN, etc.) are handled by RuleExecutionEngine
+ * during test case execution, not here (transaction listing only evaluates amount-based rules).
+ */
 @Service
 public class TransactionRuleEvaluationService {
 

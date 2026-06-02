@@ -1,3 +1,15 @@
+"""
+Main router — health, transaction generation, and AI chat endpoints.
+
+Endpoint overview:
+    GET  /health                    — liveness probe (no auth, no LLM call)
+    GET  /api/ai/provider-health    — shows which provider is configured (never exposes API key)
+    POST /api/ai/generate-transaction — generates dummy ISO 8583 transaction payload
+    POST /api/ai/chat               — FRMS AI assistant; proxied from Spring Boot POST /api/ai/chat
+
+Note: LLMProviderUnavailableError is NOT caught here. It propagates to the global handler
+in main.py which returns a 503 JSON response to Spring Boot.
+"""
 from fastapi import APIRouter, HTTPException
 from loguru import logger
 
@@ -25,6 +37,8 @@ async def health_check():
     tags=["Health"],
 )
 async def provider_health():
+    # Returns which provider is active and whether its API key is set.
+    # IMPORTANT: only the boolean presence is returned — the key itself is never exposed.
     settings = get_settings()
     provider = settings.AI_PROVIDER.lower().strip()
     if provider == "groq":

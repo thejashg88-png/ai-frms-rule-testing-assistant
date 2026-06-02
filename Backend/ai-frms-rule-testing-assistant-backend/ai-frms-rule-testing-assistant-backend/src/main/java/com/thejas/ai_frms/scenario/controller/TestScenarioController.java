@@ -13,6 +13,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST controller for managing test scenarios.
+ *
+ * A scenario groups related test cases under a single fraud rule.
+ * Relationship: Rule → Scenario → TestCases
+ *
+ * Key behavior:
+ *   - Each scenario must be linked to exactly one rule (via ruleId or ruleType).
+ *   - Scenario execution runs all ACTIVE test cases belonging to the scenario.
+ *   - INACTIVE scenarios are excluded from execution but remain in the database.
+ *   - Accepts both /api/test-scenarios and /api/scenarios as base paths.
+ */
 @RestController
 @RequestMapping({ApiPathConstants.SCENARIOS, "/api/scenarios"})
 public class TestScenarioController {

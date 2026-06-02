@@ -4,6 +4,8 @@ import errorHandlerService from './errorHandlerService'
 const isMock = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
 const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms))
 
+// Normalizes backend field names (ruleId, ruleName, ruleDescription) to frontend-standard names.
+// Multiple field names are checked because the backend may return either naming convention.
 const mapRule = (r) => ({
   ...r,
   id:          r.ruleId       ?? r.id,
@@ -14,7 +16,11 @@ const mapRule = (r) => ({
 
 const numOrNull = (v) => (v === '' || v === null || v === undefined ? null : Number(v))
 
-// Converts internal form shape → backend DTO field names + formats
+// Converts frontend form shape → backend RuleDTO field names.
+// txnAmount is zero-padded to 12 digits because the backend stores it as a fixed-length string
+// (e.g. "00000150000") and uses it for threshold comparisons in the rule engine.
+// Fields not applicable to the selected ruleType are sent as null — never omitted —
+// so the backend can explicitly clear them on update.
 const toApiPayload = (data) => {
   const txnAmountRaw = numOrNull(data.txnAmount ?? data.txnAmountRaw)
   const payload = {

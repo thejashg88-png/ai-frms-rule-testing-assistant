@@ -26,6 +26,18 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * REST controller for report generation and download.
+ *
+ * Provides two types of endpoints:
+ *   1. JSON summary endpoints (/summary, /executions, /rules) — returns structured data
+ *      for the frontend reports page; no file is generated.
+ *   2. CSV download endpoints (/download/rules, /download/executions) — streams a CSV file
+ *      as a binary download; uses Content-Disposition: attachment.
+ *
+ * POST endpoints (/execution, /scenario, /dashboard) generate PDF/Excel reports via ReportService.
+ * These are currently separate from the GET summary endpoints above.
+ */
 @RestController
 @RequestMapping(ApiPathConstants.REPORTS)
 public class ReportController {

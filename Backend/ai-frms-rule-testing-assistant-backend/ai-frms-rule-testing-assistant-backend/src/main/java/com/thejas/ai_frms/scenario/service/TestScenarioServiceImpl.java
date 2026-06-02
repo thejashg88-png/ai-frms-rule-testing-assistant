@@ -26,6 +26,18 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Service implementation for test scenario lifecycle management.
+ *
+ * A scenario is a container for test cases grouped under a single fraud rule.
+ * Each scenario must link to exactly one rule (resolved by ruleId or ruleType).
+ *
+ * Rule resolution order on create:
+ *   1. ruleId   — exact match; throws if not found
+ *   2. ruleType — prefers ACTIVE rules; falls back to any status if none active
+ *
+ * Scenario names must be unique (case-insensitive).
+ */
 @Service
 public class TestScenarioServiceImpl implements TestScenarioService {
 

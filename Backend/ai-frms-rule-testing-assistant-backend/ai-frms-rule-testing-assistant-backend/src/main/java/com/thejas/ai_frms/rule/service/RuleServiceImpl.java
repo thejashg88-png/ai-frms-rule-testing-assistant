@@ -23,6 +23,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Service implementation for fraud rule lifecycle management.
+ *
+ * Rules are the core configuration driving both the transaction risk evaluation
+ * (TransactionRuleEvaluationService) and test case execution (RuleExecutionEngine).
+ *
+ * Important: Setting a rule to INACTIVE stops it from being evaluated against transactions
+ * and from being executed in test cases immediately — no restart required.
+ */
 @Service
 public class RuleServiceImpl implements RuleService {
 
@@ -82,6 +91,11 @@ public class RuleServiceImpl implements RuleService {
         return PageResponse.fromPage(responsePage);
     }
 
+    /**
+     * Changes the active/inactive status of a rule.
+     * Setting to INACTIVE immediately excludes the rule from transaction risk evaluation
+     * and scenario execution without deleting it or its history.
+     */
     @Override
     @Transactional
     public RuleResponse changeRuleStatus(Long ruleId, RuleStatus status) {
@@ -104,6 +118,7 @@ public class RuleServiceImpl implements RuleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Rule not found with id: " + ruleId));
     }
 
+    // Additional business-level validation beyond @NotBlank/@NotNull on the DTO
     private void validateCreateRequest(RuleCreateRequest request) {
         if (request.getRuleType() == null || request.getRuleType().isBlank()) {
             throw new BadRequestException("Rule type is required");

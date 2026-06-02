@@ -6,9 +6,13 @@ import Card from '../../components/common/Card'
 import ExecuteTestCasePanel from '../../components/executions/ExecuteTestCasePanel'
 import ExecuteScenarioPanel from '../../components/executions/ExecuteScenarioPanel'
 
+// Two execution modes:
+// - Test Case: runs a single test case against the rule engine and returns one result.
+// - Scenario:  runs ALL ACTIVE test cases in the selected scenario in one backend call.
 const RunExecutionPage = () => {
   const navigate = useNavigate()
   const [tab, setTab] = useState('testcase')
+  // Stores the most recent execution result so the "View Last Result" shortcut button works.
   const [lastExecution, setLastExecution] = useState(null)
 
   const tabStyle = (t) => ({

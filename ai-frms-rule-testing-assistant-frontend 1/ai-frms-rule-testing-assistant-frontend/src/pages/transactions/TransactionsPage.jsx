@@ -13,12 +13,14 @@ import useClientPagination from '../../hooks/useClientPagination'
 import transactionService from '../../services/transactionService'
 import '../../styles/pages.css'
 
+// Payment Status — normalized from backend transactionStatus/responseCode.
 const STATUS_OPTIONS = [
   { value: 'APPROVED', label: 'Approved' },
   { value: 'DECLINED', label: 'Declined' },
   { value: 'PENDING',  label: 'Pending' },
 ]
 
+// Risk Status — set by the FRMS rule engine. Separate from payment network status.
 const RISK_STATUS_OPTIONS = [
   { value: 'ACCEPT',        label: 'Accept' },
   { value: 'MONITOR',       label: 'Monitor' },

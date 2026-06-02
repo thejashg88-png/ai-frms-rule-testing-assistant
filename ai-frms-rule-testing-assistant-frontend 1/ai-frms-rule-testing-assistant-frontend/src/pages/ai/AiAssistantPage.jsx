@@ -7,6 +7,12 @@ import AiFailureAnalysis from '../../components/ai/AiFailureAnalysis'
 import AiTransactionGenerator from '../../components/ai/AiTransactionGenerator'
 import AiChat from '../../components/ai/AiChat'
 
+// Five AI tabs — each tab renders a standalone component that calls aiService independently.
+// explain  → AiRuleExplanation  — explain what a rule does and its risk level
+// generate → AiGenerateTestCases — suggest test cases for a rule using AI
+// analyze  → AiFailureAnalysis  — root cause analysis for a failed execution
+// txngen   → AiTransactionGenerator — generate realistic dummy transaction data
+// chat     → AiChat              — free-form Q&A about rules, executions, and testing
 const TABS = [
   { id: 'explain',    label: 'Explain Rule' },
   { id: 'generate',  label: 'Generate Test Cases' },

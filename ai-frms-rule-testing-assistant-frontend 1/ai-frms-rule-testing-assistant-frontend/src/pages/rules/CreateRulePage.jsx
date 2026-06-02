@@ -26,15 +26,16 @@ const CreateRulePage = () => {
     return []
   }
 
-  // Called by AiRuleGenerator when a suggestion arrives
+  // Called by AiRuleGenerator when the AI returns a rule suggestion.
+  // formKey is incremented to force RuleForm to remount with fresh initialValues;
+  // without remounting, useState inside RuleForm would ignore the new initialValues prop.
   const handleAiGenerate = ({ formValues, explanation, riskNotes }) => {
     setAiValues(formValues)
     setAiInsight({
       explanation: explanation || 'No explanation provided.',
       riskNotes: normalizeRiskNotes(riskNotes),
     })
-    setFormKey((k) => k + 1)   // force RuleForm to re-mount with new initialValues
-    // scroll form into view
+    setFormKey((k) => k + 1)
     setTimeout(() => {
       document.getElementById('rule-form-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 100)

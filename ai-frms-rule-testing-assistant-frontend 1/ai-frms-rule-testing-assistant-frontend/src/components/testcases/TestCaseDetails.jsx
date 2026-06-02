@@ -24,7 +24,8 @@ const TestCaseDetails = ({ testCase }) => {
   const execStatus = lastExec ? STATUSES.EXECUTION_STATUS?.[lastExec] : null
 
   const expectedResult = testCase?.expectedResult
-  // expectedAction may be at top level or nested inside expectedResult object
+  // expectedAction can live at top level OR inside the expectedResult object,
+  // depending on which backend version or test case creation path was used.
   const expectedAction =
     testCase?.expectedAction ||
     (expectedResult !== null && typeof expectedResult === 'object'

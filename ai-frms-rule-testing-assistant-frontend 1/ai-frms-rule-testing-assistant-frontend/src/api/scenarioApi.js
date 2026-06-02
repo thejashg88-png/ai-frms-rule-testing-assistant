@@ -1,5 +1,6 @@
 import axiosInstance from './axiosConfig'
 
+// All functions return response.data; scenarioService normalizes the body.
 export const scenarioApi = {
   getAll: async (params = {}) => {
     const response = await axiosInstance.get('/scenarios', { params })
@@ -26,6 +27,7 @@ export const scenarioApi = {
     return response.data
   },
 
+  // Returns the test cases associated with a specific scenario.
   getTestCases: async (scenarioId) => {
     const response = await axiosInstance.get(`/scenarios/${scenarioId}/testcases`)
     return response.data

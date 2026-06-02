@@ -27,6 +27,9 @@ const normalizeExecutionType = (execution) => {
   return 'UNKNOWN'
 }
 
+// Normalizes execution status across backend variants.
+// Backend may return PASS, PASSED, or SUCCESS — all map to PASSED for consistent UI display.
+// Similarly FAIL/FAILED/ERROR → FAILED; PENDING/RUNNING/IN_PROGRESS → PENDING.
 const normalizeExecutionStatus = (execution) => {
   const value = String(
     execution.executionStatus ||
@@ -165,6 +168,7 @@ export const executionService = {
       // Backend wraps: { success, message, data: { executionStatus, results, ... } }
       // executionApi already extracts response.data, so raw IS the body.
       const body = raw?.data ?? raw
+      // results[] contains per-test-case comparison details; we read the first item for display.
       const firstResult = Array.isArray(body?.results) ? body.results[0] : null
 
       const status = normalizeExecutionStatus({
@@ -182,7 +186,7 @@ export const executionService = {
         durationMs:      body?.durationMs   ?? null,
         status,
         normalizedStatus: status,
-        // "result" = what the rule actually returned (actualAction)
+        // "result" = what the rule actually returned (actualAction), not the expected value
         result:          firstResult?.actualAction ?? body?.actualAction ?? null,
         failureReason:   firstResult?.failureReason ?? (
           status === 'FAILED' ? (firstResult?.message ?? null) : null

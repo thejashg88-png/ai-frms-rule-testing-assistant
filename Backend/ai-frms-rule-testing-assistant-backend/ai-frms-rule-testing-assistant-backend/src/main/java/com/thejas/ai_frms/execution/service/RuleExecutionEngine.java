@@ -18,6 +18,29 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Executes the fraud rule linked to a test case against the provided input data.
+ *
+ * Each rule type has its own evaluation logic:
+ *   SINGLE_LARGE_TX / DAILY_LIMIT / MONTHLY_VOLUME / ANNUAL_VOLUME
+ *       → triggers when amount > maxAmount
+ *   STRUCTURING
+ *       → triggers when amount < txnAmount (below-threshold pattern)
+ *   HIGH_FREQ_TXN
+ *       → counts historical transactions within frequencyHours window for the same card/device;
+ *          triggers when (historicalCount + 1) > txnCount
+ *   SEQUENTIAL_TXN
+ *       → same window logic as HIGH_FREQ_TXN but uses >= threshold (inclusive)
+ *   UNUSUAL_AMT
+ *       → computes baseline average from historical transactions;
+ *          triggers when amount > avg + (avg * percentageThreshold / 100)
+ *   Default (unrecognized type)
+ *       → triggers when amount > maxAmount OR amount < txnAmount
+ *
+ * For rules that query transaction history (HIGH_FREQ, SEQUENTIAL, UNUSUAL_AMT):
+ *   Identifier lookup order: serialNumber → track2Data → cardNumber (as track2Data)
+ *   If no history is found, the rule returns ACCEPT (cannot evaluate without a baseline).
+ */
 @Service
 public class RuleExecutionEngine {
 
@@ -108,6 +131,7 @@ public class RuleExecutionEngine {
         };
     }
 
+    // Used by SINGLE_LARGE_TX, DAILY_LIMIT, MONTHLY_VOLUME, ANNUAL_VOLUME, ANNUAL_TXN_VOLUME, MONTHLY_TXN_VOLUME
     private RuleAction evaluateAmountGreaterThanRule(RuleEntity rule, BigDecimal amount) {
         if (rule.getMaxAmount() != null && amount.compareTo(rule.getMaxAmount()) > 0) {
             return rule.getAction();
@@ -212,6 +236,7 @@ public class RuleExecutionEngine {
         return Collections.emptyList();
     }
 
+    // STRUCTURING triggers when amount is BELOW txnAmount (opposite of most other rules)
     private RuleAction evaluateStructuringRule(RuleEntity rule, BigDecimal amount) {
         if (rule.getTxnAmount() != null && amount.compareTo(rule.getTxnAmount()) < 0) {
             return rule.getAction();
@@ -469,6 +494,7 @@ public class RuleExecutionEngine {
         return List.of(rule.getRuleType() + "_" + actualAction.name());
     }
 
+    // Fixed risk scores per action: ACCEPT=0, MONITOR=60, REJECT=90
     private BigDecimal buildRiskScore(RuleAction actualAction) {
         return switch (actualAction) {
             case ACCEPT -> BigDecimal.ZERO;

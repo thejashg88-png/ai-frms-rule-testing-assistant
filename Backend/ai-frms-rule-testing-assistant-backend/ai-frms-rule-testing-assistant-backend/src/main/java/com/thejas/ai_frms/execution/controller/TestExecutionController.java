@@ -17,6 +17,24 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * REST controller for test and scenario execution.
+ *
+ * Two execution modes:
+ *   TEST CASE execution  — runs a single test case against its linked rule; stores one result record.
+ *   SCENARIO execution   — runs all ACTIVE test cases in a scenario; stores one result per test case.
+ *
+ * Each execution creates a TestExecutionEntity record with:
+ *   - total/passed/failed/error counts
+ *   - overall executionStatus (PASSED / FAILED / ERROR)
+ *   - list of per-test-case ExecutionResultResponse objects
+ *
+ * Convenience aliases:
+ *   POST /test-case/{id}      = POST /test-case with body {testCaseId}
+ *   POST /run-testcase/{id}   = same
+ *   POST /scenario/{id}       = POST /scenario with body {scenarioId}
+ *   POST /run-scenario/{id}   = same
+ */
 @RestController
 @RequestMapping(ApiPathConstants.EXECUTIONS)
 public class TestExecutionController {

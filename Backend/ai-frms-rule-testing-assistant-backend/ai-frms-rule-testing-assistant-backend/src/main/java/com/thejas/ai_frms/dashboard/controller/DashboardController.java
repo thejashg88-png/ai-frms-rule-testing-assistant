@@ -12,6 +12,17 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * REST controller for dashboard summary data.
+ *
+ * Provides aggregated statistics for the frontend dashboard:
+ *   summary          — total rules, test cases, scenarios, executions and pass rate
+ *   rule-wise-stats  — breakdown of pass/fail counts per rule
+ *   execution-trend  — daily execution counts over the last N days (default 7)
+ *   recent-executions — latest N execution records (default 10)
+ *
+ * All endpoints are read-only and do not modify any data.
+ */
 @RestController
 @RequestMapping(ApiPathConstants.DASHBOARD)
 public class DashboardController {

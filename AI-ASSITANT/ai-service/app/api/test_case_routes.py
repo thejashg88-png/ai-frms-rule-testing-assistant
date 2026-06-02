@@ -1,3 +1,10 @@
+"""
+Route: POST /api/ai/generate-test-cases
+
+Called by Spring Boot to generate test cases for a fraud rule.
+Always returns exactly 3 cases with expectedResult ACCEPT, MONITOR, and REJECT.
+The service layer enforces this guarantee even if the LLM returns a different count.
+"""
 from fastapi import APIRouter, HTTPException
 from loguru import logger
 

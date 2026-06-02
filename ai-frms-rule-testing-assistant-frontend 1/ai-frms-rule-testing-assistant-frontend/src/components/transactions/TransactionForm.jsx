@@ -25,6 +25,8 @@ const CURRENCY_OPTIONS = [
   { value: 'SGD', label: 'SGD' },
 ]
 
+// serialNumber and mccCode are required by the backend TransactionDTO.
+// Default values are provided so the form is ready for quick test submissions.
 const EMPTY = {
   track2Data:        '',
   amount:            '',

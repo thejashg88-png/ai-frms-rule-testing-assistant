@@ -6,6 +6,16 @@ import com.thejas.ai_frms.common.enums.RuleStatus;
 
 import java.math.BigDecimal;
 
+/**
+ * Request body for the AI rule explanation endpoint.
+ *
+ * Can be used in two ways:
+ *   1. POST /api/ai/explain-rule — caller sends rule fields inline (ruleName, ruleType, action, etc.)
+ *   2. GET  /api/ai/explain-rule/{ruleId} — service fetches the rule from DB and builds this object
+ *
+ * All numeric fields (maxAmount, percentageThreshold, etc.) are forwarded to FastAPI
+ * to give the AI enough context to generate a meaningful explanation.
+ */
 public class AiRuleExplanationRequest {
 
     private Long ruleId;

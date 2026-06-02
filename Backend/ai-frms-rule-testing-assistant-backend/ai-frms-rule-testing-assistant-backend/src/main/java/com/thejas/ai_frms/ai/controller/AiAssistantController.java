@@ -22,6 +22,26 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.util.Map;
 
+/**
+ * REST controller for AI assistant features.
+ *
+ * This controller does NOT implement any AI logic itself — it delegates all AI tasks
+ * to the FastAPI Python service via AiAssistantService → AiServiceWebClient (HTTP POST).
+ *
+ * Available AI operations:
+ *   generate-test-cases   — generates test cases for a rule or scenario
+ *   analyze-failure       — explains why a test case failed
+ *   explain-rule          — produces a business/technical explanation for a rule
+ *   generate-transaction  — produces a sample transaction for a given rule context
+ *   generate-rule         — suggests a rule definition from a plain-language requirement
+ *   chat                  — free-form FRMS assistant chat
+ *   health                — checks whether the FastAPI AI service is reachable
+ *
+ * If the FastAPI service is unavailable, endpoints return success:false with a clear message.
+ * They never throw a 500 — unavailability is expected in development environments.
+ *
+ * Frontend-friendly aliases are provided for path variations the UI may send.
+ */
 @RestController
 @RequestMapping(ApiPathConstants.AI_ASSISTANT)
 public class AiAssistantController {

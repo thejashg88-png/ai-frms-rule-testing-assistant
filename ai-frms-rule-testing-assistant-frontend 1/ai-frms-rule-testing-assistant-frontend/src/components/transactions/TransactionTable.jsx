@@ -5,12 +5,17 @@ import Badge from '../common/Badge'
 import { maskCardNumber } from '../../utils/maskUtils'
 import { formatAmount } from '../../utils/amountUtils'
 
+// Payment Status = outcome of the payment network (APPROVED / DECLINED / PENDING).
+// Derived from transactionStatus/responseCode in transactionService.normalizeTransactionStatus.
 const PAYMENT_STATUS_COLORS = {
   APPROVED: { bg: '#dcfce7', color: '#16a34a' },
   DECLINED: { bg: '#fee2e2', color: '#dc2626' },
   PENDING:  { bg: '#fef9c3', color: '#ca8a04' },
 }
 
+// Risk Status = FRMS rule engine evaluation result (ACCEPT / MONITOR / REJECT / NOT EVALUATED).
+// Set by the rule engine after evaluating the transaction against active rules.
+// "NOT EVALUATED" means no rule matched or the engine was not invoked.
 const RISK_STATUS_COLORS = {
   ACCEPT:        { bg: '#dcfce7', color: '#15803d' },
   MONITOR:       { bg: '#fff7ed', color: '#c2410c' },

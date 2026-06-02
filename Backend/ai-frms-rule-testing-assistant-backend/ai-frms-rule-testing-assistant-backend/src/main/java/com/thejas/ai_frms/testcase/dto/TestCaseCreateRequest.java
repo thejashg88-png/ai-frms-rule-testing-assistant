@@ -7,6 +7,18 @@ import com.thejas.ai_frms.common.enums.TestCaseType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+/**
+ * Request body for creating a test case.
+ *
+ * Input data can be supplied in two ways (service merges them automatically):
+ *   1. Nested object: "inputData": { "amount": 5000, "cardNumber": "...", ... }
+ *   2. Flat top-level fields: "cardNumber": "...", "amount": "5000", etc.
+ *   If both are present, the nested inputData object takes priority.
+ *
+ * expectedResult must be a structured object, not a plain string.
+ * It carries expectedAction (MONITOR/REJECT/ACCEPT) and optionally expectedOutcome (PASS/FAIL).
+ * The AI-generated test cases may send a plain string; ExpectedResultDeserializer handles that case.
+ */
 public class TestCaseCreateRequest {
 
     @NotBlank(message = "Test case name is required")
@@ -21,6 +33,7 @@ public class TestCaseCreateRequest {
 
     private GeneratedBy generatedBy = GeneratedBy.MANUAL;
 
+    // Scenario this test case belongs to — required because a test case must be linked to a scenario
     @NotNull(message = "Valid scenarioId is required")
     private Long scenarioId;
 
@@ -34,11 +47,12 @@ public class TestCaseCreateRequest {
     // optional nested input data — service builds this from flat fields when absent
     private TestInputData inputData;
 
-    // ExpectedResult class carries @JsonDeserialize — handles both string and object forms
+    // ExpectedResult class carries @JsonDeserialize — handles both string and object forms from AI
     @NotNull(message = "Expected result is required")
     private ExpectedResult expectedResult;
 
     // ── flat input fields (frontend sends these at top level) ─────────────────
+    // These are merged into a TestInputData object by the service when inputData is absent
     private String cardNumber;
     private String amount;
     private String merchantId;
@@ -47,6 +61,7 @@ public class TestCaseCreateRequest {
     private String countryCode;
 
     // ── flat expected result fields ───────────────────────────────────────────
+    // Convenience fields populated by the AI response; merged into expectedResult when set
     private String expectedAction;
     private String expectedRiskLevel;
 

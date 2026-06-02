@@ -14,6 +14,22 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.util.List;
 
+/**
+ * Centralised exception handler for all REST controllers.
+ *
+ * HTTP status mapping:
+ *   BadRequestException             → 400 (invalid input, duplicate names, missing fields)
+ *   ResourceNotFoundException        → 404 (entity not found by ID)
+ *   FrmsIntegrationException        → 502 (FRMS external system call failed)
+ *   AiServiceException              → 502 (FastAPI AI service unavailable or returned error)
+ *   MethodArgumentNotValidException → 400 (Bean Validation failures on @Valid DTOs)
+ *   ConstraintViolationException    → 400 (Bean Validation failures on path/query params)
+ *   DataIntegrityViolationException → 400 (FK constraint violations — mapped to 400, not 500,
+ *                                          because it reflects a user-visible relationship error
+ *                                          e.g. deleting a rule that still has linked scenarios)
+ *   WebClientResponseException      → mirrors the upstream HTTP status (proxy errors)
+ *   Exception (catch-all)           → 500 (unexpected server errors)
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

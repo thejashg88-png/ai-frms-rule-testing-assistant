@@ -33,7 +33,8 @@ const normalizeAmount = (raw, expectedAction, requirement) => {
   return 50000
 }
 
-// ── Requirement keyword inference (local fallback, no AI call) ────────────────
+// Local keyword inference used when the AI service is unavailable or returns no usable data.
+// This avoids a blank form — the user still gets a reasonable starting point.
 const inferFromRequirement = (requirement) => {
   const req = (requirement || '').toLowerCase()
 
@@ -481,6 +482,9 @@ export const aiService = {
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 
+  // Sends a failed execution's details to the AI for root cause analysis.
+  // ruleType must be extracted from the actual execution result — never hardcoded —
+  // because different rule types produce different failure patterns.
   analyzeFailure: async (payload) => {
     if (isMock) {
       await delay(2000)
@@ -586,6 +590,10 @@ export const aiService = {
     }
   },
 
+  // Sends a plain-language message to the AI chat endpoint.
+  // The UI renders only result.reply (plain text); never the full JSON response.
+  // normalizeAiChatResponse handles cases where the backend stores FastAPI's JSON response
+  // as a raw string inside AiChatResponse.reply.
   chat: async ({ message, context = {} }) => {
     const payload = { message, context }
     if (isMock) {

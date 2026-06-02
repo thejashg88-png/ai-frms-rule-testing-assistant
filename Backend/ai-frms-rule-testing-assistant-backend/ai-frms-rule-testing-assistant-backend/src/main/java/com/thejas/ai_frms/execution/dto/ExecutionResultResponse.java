@@ -8,6 +8,18 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Per-test-case result within a test execution.
+ *
+ * Key field semantics:
+ *   expectedAction        — the action the rule engine was supposed to produce (from test case design)
+ *   actualAction          — the action the rule engine actually produced at execution time
+ *   resultStatus          — PASSED if expectedAction == actualAction, FAILED otherwise, ERROR on exception
+ *   expectedOutcome       — test designer's meta-intent ("PASS" = this test should succeed, "FAIL" = expected to fail)
+ *   failureReason         — human-readable mismatch description (e.g. "Expected MONITOR but got ACCEPT")
+ *   ruleType              — the rule type that was evaluated (from the scenario's linked rule)
+ *   inputAmount           — the transaction amount value used in this execution
+ */
 @Getter
 @Setter
 public class ExecutionResultResponse {

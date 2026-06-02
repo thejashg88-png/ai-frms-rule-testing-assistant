@@ -38,7 +38,8 @@ export const dashboardService = {
     if (isMock) { await delay(); return mockSummary }
     try {
       const resp = await dashboardApi.getSummary()
-      // Handle: response.data.data, response.data, or response directly
+      // Handles backend shapes: data.data, data, or raw object.
+      // totalScenarios defaults to 0 if absent because some backend versions omit it.
       const raw = resp?.data?.data ?? resp?.data ?? resp
       return {
         ...raw,
@@ -53,6 +54,7 @@ export const dashboardService = {
     if (isMock) { await delay(); return mockRecentExecutions.slice(0, limit) }
     try {
       const resp = await dashboardApi.getRecentExecutions(limit)
+      // Spring may return a Page object with .content or a plain array
       const items = Array.isArray(resp?.data) ? resp.data : (resp?.data?.content ?? [])
       return items.map(mapExecution)
     } catch (err) {

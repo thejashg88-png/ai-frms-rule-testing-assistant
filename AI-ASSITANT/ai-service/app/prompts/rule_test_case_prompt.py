@@ -1,3 +1,15 @@
+"""
+Prompt builder for POST /api/ai/generate-test-cases (Groq provider path).
+
+Instructs the LLM to output exactly 3 JSON test cases covering:
+  - A trigger scenario (rule fires)
+  - A boundary/edge case
+  - A negative scenario (rule does NOT fire)
+
+The Groq result is post-processed by _normalize_to_three_cases() to guarantee
+ACCEPT / MONITOR / REJECT outcomes regardless of what the LLM labels them.
+JSON output is mandatory — the response is parsed by parse_llm_json().
+"""
 from app.models.request_models import GenerateTestCasesRequest
 from app.utils.prompt_utils import build_rule_context, json_output_instruction
 

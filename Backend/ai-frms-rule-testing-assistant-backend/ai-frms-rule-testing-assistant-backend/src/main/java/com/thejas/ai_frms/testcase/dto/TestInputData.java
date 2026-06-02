@@ -3,17 +3,33 @@ package com.thejas.ai_frms.testcase.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Transaction input data used by the rule execution engine when running a test case.
+ *
+ * Identifier priority for frequency, sequential, and unusual-amount rules:
+ *   1. serialNumber — primary identifier (physical card/device serial stored in frms_transactions)
+ *   2. track2Data   — magnetic stripe data; also used as normalized cardNumber fallback
+ *   3. cardNumber   — normalized (spaces/hyphens removed) and matched against track2Data
+ *
+ * The engine looks up historical transactions in this priority order to build the evaluation window.
+ * If none of the identifiers yield results, rules that need history will return ACCEPT.
+ */
 public class TestInputData {
 
     private String rrn;
     private String stan;
+    // Primary card/device identifier — used first by HIGH_FREQ, SEQUENTIAL_TXN, UNUSUAL_AMT rules
     private String serialNumber;
+    // Magnetic stripe track2 data — fallback identifier if serialNumber lookup returns no results
     private String track2Data;
     private String tid;
     private String mid;
+    // Card number (PAN) — normalized and matched against track2Data as a last fallback
     private String cardNumber;
     private String merchantId;
+    // Required for INCONSISTENT_MCC rules
     private String mccCode;
+    // The transaction amount used by all rule type evaluations
     private BigDecimal amount;
     private String currency;
     private String transactionType;

@@ -1,3 +1,12 @@
+"""
+Prompt builder for POST /api/ai/explain-rule (Groq provider path).
+
+Instructs the LLM to return a structured JSON explanation with five keys:
+  summary, businessMeaning, technicalMeaning, exampleScenario, riskNotes.
+
+These keys map directly to the Spring Boot AiRuleExplanationResponse DTO —
+do not rename them here without updating the Spring Boot contract.
+"""
 from app.models.request_models import ExplainRuleRequest
 from app.utils.prompt_utils import build_rule_context, json_output_instruction
 

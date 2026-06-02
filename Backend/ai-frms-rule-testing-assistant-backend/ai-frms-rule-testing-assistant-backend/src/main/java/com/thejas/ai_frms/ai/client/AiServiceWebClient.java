@@ -17,6 +17,21 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import java.time.Duration;
 import java.util.Map;
 
+/**
+ * HTTP client that calls the FastAPI AI service endpoints.
+ *
+ * All base URL and path values are injected from application properties
+ * (prefix: app.integration.ai.*), with sensible defaults for localhost development.
+ * Final URL = baseUrl + path (e.g. http://localhost:8000 + /api/ai/chat).
+ *
+ * Timeout: 60 seconds per request — AI model inference can be slow,
+ * especially for large test case generation tasks.
+ *
+ * Error handling:
+ *   WebClientResponseException (4xx/5xx from FastAPI) → wrapped in AiServiceException
+ *   Connection refused / timeout                      → wrapped in AiServiceException
+ *   In both cases the caller receives AiServiceException, not a raw HTTP exception.
+ */
 @Component("aiApiClient")
 public class AiServiceWebClient implements AiServiceClient {
 

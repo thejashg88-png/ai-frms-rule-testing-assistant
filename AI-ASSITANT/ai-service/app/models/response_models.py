@@ -1,9 +1,25 @@
+"""
+Pydantic response models for all AI service endpoints.
+
+All endpoints return ApiResponse as the outer wrapper:
+    { "success": true, "message": "...", "data": { ... } }
+
+Spring Boot deserializes the `data` field into its own DTO. The frontend
+reads specific keys from `data` (e.g. summary, testCases, reply) — changing
+key names here will break the Spring Boot ↔ FastAPI contract.
+"""
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
 
 class ApiResponse(BaseModel):
+    """
+    Standard envelope returned by every endpoint.
+    On failure, success=False, data=None, and message describes the error.
+    On success, data contains the endpoint-specific payload model.
+    """
+
     success: bool
     message: str
     data: Optional[Any] = None
@@ -27,6 +43,11 @@ class TestCasesData(BaseModel):
 
 
 class RuleExplanationData(BaseModel):
+    """
+    Structured explanation of a fraud rule.
+    All five fields are required — Spring Boot maps them to its AiRuleExplanationResponse DTO.
+    """
+
     summary: str
     businessMeaning: str
     technicalMeaning: str
@@ -35,6 +56,12 @@ class RuleExplanationData(BaseModel):
 
 
 class FailureAnalysisData(BaseModel):
+    """
+    Failure analysis result for a test case that returned an unexpected outcome.
+    possibleReasons and debuggingSteps are always non-empty lists.
+    riskImpact communicates the production consequence of leaving the bug unfixed.
+    """
+
     possibleReasons: List[str]
     debuggingSteps: List[str]
     recommendedFix: str
@@ -78,5 +105,11 @@ class RuleGenerationData(BaseModel):
 
 
 class AiChatData(BaseModel):
+    """
+    Response for POST /api/ai/chat.
+    reply is the AI-generated plain text answer (not JSON).
+    context echoes back the request context — Spring Boot passes it through to the frontend.
+    """
+
     reply: str
     context: dict = Field(default_factory=dict)

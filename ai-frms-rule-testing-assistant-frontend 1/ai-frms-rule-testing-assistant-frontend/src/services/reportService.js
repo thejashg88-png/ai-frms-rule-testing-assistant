@@ -66,6 +66,10 @@ export const reportService = {
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
 
+  // Triggers a file-save dialog by creating a temporary object URL and clicking a synthetic <a>.
+  // The URL is revoked immediately after the click to release browser memory.
+  // Error responses come back as Blobs because of responseType: 'blob' in reportApi —
+  // we must re-parse the blob as text to extract the JSON error message.
   downloadReport: async (type, params = {}) => {
     if (isMock) {
       await delay(800)

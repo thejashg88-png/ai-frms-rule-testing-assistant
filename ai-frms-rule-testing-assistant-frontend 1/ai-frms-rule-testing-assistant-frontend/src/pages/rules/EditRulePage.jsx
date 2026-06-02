@@ -21,6 +21,7 @@ const EditRulePage = () => {
   const [saving, setSaving] = useState(false)
   const [retryKey, setRetryKey] = useState(0)
 
+  // retryKey is incremented by the ErrorMessage retry button to re-trigger this effect.
   useEffect(() => {
     setLoading(true)
     setLoadError(null)

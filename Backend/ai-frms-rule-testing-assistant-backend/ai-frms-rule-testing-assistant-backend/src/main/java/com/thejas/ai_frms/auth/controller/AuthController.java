@@ -13,6 +13,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Handles user authentication — registration and login.
+ *
+ * No JWT or session management is involved at this layer; AuthService handles
+ * credential validation and returns an AuthResponse on successful login.
+ * All endpoints are public (no authentication required to call them).
+ */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {

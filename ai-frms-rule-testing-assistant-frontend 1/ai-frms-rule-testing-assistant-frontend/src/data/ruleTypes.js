@@ -1,3 +1,6 @@
+// Backend enum values for RuleType — must match exactly (uppercase, underscore).
+// Used in filter dropdowns and table badges. Display labels are in `label`.
+// ruleFieldConfig.js maps each value to its required form fields.
 export const RULE_TYPES = [
   { value: 'STRUCTURING',        label: 'Structuring' },
   { value: 'UNUSUAL_AMT',        label: 'Unusual Amount' },
