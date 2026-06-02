@@ -120,7 +120,8 @@
 
 .error-container {
   text-align: center;
-  background: white;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   padding: 40px;
   border-radius: var(--radius);
   box-shadow: var(--shadow-lg);
@@ -244,7 +245,7 @@
 /* Right form panel */
 .signup-form-panel {
   flex: 1;
-  background: #fff;
+  background: var(--bg-primary);
   display: flex;
   align-items: center;
   justify-content: center;

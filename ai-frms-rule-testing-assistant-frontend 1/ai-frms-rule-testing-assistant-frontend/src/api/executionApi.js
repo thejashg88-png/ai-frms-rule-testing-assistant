@@ -11,13 +11,13 @@ export const executionApi = {
     return response.data
   },
 
-  runTestCase: async (testCaseId, data = {}) => {
-    const response = await axiosInstance.post(`/executions/run-testcase/${testCaseId}`, data)
+  runTestCase: async (payload) => {
+    const response = await axiosInstance.post('/executions/test-case', payload)
     return response.data
   },
 
-  runScenario: async (scenarioId, data = {}) => {
-    const response = await axiosInstance.post(`/executions/run-scenario/${scenarioId}`, data)
+  runScenario: async (payload) => {
+    const response = await axiosInstance.post('/executions/scenario', payload)
     return response.data
   },
 

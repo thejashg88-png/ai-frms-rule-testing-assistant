@@ -4,6 +4,7 @@ import Table from '../common/Table'
 import Button from '../common/Button'
 import Badge from '../common/Badge'
 import RuleStatusBadge from './RuleStatusBadge'
+import { getRuleTypeLabel } from '../../data/ruleTypes'
 
 const ACTION_COLORS = {
   ACCEPT:  { bg: '#dcfce7', color: '#16a34a' },
@@ -31,7 +32,7 @@ const RuleTable = ({ rules, loading, onDelete, deletingId, confirmId, onConfirmD
       key: 'ruleType',
       label: 'Type',
       width: '120px',
-      render: (val) => <Badge bgColor="#eff6ff" color="#2563eb" size="sm">{val}</Badge>,
+      render: (val) => <Badge bgColor="#eff6ff" color="#2563eb" size="sm">{getRuleTypeLabel(val)}</Badge>,
     },
     {
       key: 'action',

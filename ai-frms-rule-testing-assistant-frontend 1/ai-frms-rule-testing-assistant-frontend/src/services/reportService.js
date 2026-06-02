@@ -70,25 +70,39 @@ export const reportService = {
     if (isMock) {
       await delay(800)
       const content = `FRMS Report - ${type.toUpperCase()}\nGenerated: ${new Date().toISOString()}\n\nMock data report for ${type}.\n`
-      const blob = new Blob([content], { type: 'text/plain' })
+      const blob = new Blob([content], { type: 'text/csv' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `frms-${type}-report-${Date.now()}.txt`
+      a.download = `${type}-report.csv`
       a.click()
       URL.revokeObjectURL(url)
       return true
     }
     try {
       const blob = await reportApi.downloadReport(type, params)
+      const filename = type === 'rules' ? 'rules-report.csv' : 'executions-report.csv'
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `frms-${type}-report-${Date.now()}.pdf`
+      a.download = filename
       a.click()
       URL.revokeObjectURL(url)
       return true
     } catch (err) {
+      const responseData = err?.response?.data
+      if (responseData instanceof Blob) {
+        let message = 'Report download failed'
+        try {
+          const text = await responseData.text()
+          const json = JSON.parse(text)
+          console.error('[Report Download Error Body]', json)
+          message = json.message || message
+        } catch (parseErr) {
+          console.warn('[Report Download] Could not parse error response', parseErr)
+        }
+        throw new Error(`Failed to download report: ${message}`)
+      }
       throw new Error(errorHandlerService.getErrorMessage(err))
     }
   },

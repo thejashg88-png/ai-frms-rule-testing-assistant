@@ -13,15 +13,24 @@ const CreateTransactionPage = () => {
   const { addToast } = useToast()
   const [loading, setLoading] = useState(false)
   const [prefill, setPrefill] = useState({})
+  const [serverErrors, setServerErrors] = useState([])
 
   const handleSubmit = async (formData) => {
     setLoading(true)
+    setServerErrors([])
     try {
       await transactionService.create(formData)
       addToast('Transaction created successfully', 'success')
       navigate('/transactions')
-    } catch (err) { addToast(err.message, 'error') }
-    finally { setLoading(false) }
+    } catch (err) {
+      if (err.validationErrors) {
+        setServerErrors(err.validationErrors)
+      } else {
+        addToast(err.message, 'error')
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -41,6 +50,7 @@ const CreateTransactionPage = () => {
             onCancel={() => navigate('/transactions')}
             loading={loading}
             submitLabel="Create Transaction"
+            serverErrors={serverErrors}
           />
         </Card>
       </div>

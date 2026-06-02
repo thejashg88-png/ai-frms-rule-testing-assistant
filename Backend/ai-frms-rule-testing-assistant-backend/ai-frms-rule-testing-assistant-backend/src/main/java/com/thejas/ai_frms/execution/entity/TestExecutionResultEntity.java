@@ -51,6 +51,12 @@ public class TestExecutionResultEntity {
     @Column(name = "message", length = 1000)
     private String message;
 
+    @Column(name = "failure_reason", length = 500)
+    private String failureReason;
+
+    @Column(name = "expected_outcome", length = 50)
+    private String expectedOutcome;
+
     @Column(name = "comparison_result", columnDefinition = "TEXT")
     private String comparisonResultJson;
 

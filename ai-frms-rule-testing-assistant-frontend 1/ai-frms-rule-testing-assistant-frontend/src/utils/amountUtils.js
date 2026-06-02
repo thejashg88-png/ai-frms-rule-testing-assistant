@@ -1,6 +1,24 @@
-export const formatAmount = (amount, currency = 'USD') => {
-  if (amount == null) return '-'
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount)
+export const formatAmount = (amount, currency = 'INR') => {
+  if (amount === null || amount === undefined || amount === '') return '-'
+
+  const safeCurrency =
+    typeof currency === 'string' && currency.trim()
+      ? currency.trim().toUpperCase()
+      : 'INR'
+
+  const numericAmount = Number(amount)
+  if (Number.isNaN(numericAmount)) return String(amount)
+
+  try {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: safeCurrency,
+      minimumFractionDigits: 2,
+    }).format(numericAmount)
+  } catch (error) {
+    console.warn('[formatAmount] Invalid currency, falling back:', safeCurrency)
+    return `${numericAmount}`
+  }
 }
 
 export const formatINR = (amount) => formatAmount(amount, 'INR')

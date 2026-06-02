@@ -6,6 +6,7 @@ import com.thejas.ai_frms.dashboard.dto.DashboardSummaryResponse;
 import com.thejas.ai_frms.dashboard.dto.ExecutionTrendResponse;
 import com.thejas.ai_frms.dashboard.dto.RuleWiseExecutionStats;
 import com.thejas.ai_frms.dashboard.service.DashboardService;
+import com.thejas.ai_frms.execution.dto.ExecuteTestResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,5 +43,14 @@ public class DashboardController {
         List<ExecutionTrendResponse> response = dashboardService.getExecutionTrend(days);
 
         return ResponseEntity.ok(ApiResponse.success("Execution trend fetched successfully", response));
+    }
+
+    @GetMapping("/recent-executions")
+    public ResponseEntity<ApiResponse<List<ExecuteTestResponse>>> getRecentExecutions(
+            @RequestParam(defaultValue = "10") int limit
+    ) {
+        List<ExecuteTestResponse> response = dashboardService.getRecentExecutions(limit);
+
+        return ResponseEntity.ok(ApiResponse.success("Recent executions fetched successfully", response));
     }
 }

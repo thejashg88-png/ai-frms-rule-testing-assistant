@@ -16,5 +16,7 @@ public interface TestCaseRepository extends JpaRepository<TestCaseEntity, Long>,
 
     List<TestCaseEntity> findByScenarioScenarioId(Long scenarioId);
 
+    List<TestCaseEntity> findByScenarioScenarioIdAndStatus(Long scenarioId, RuleStatus status);
+
     List<TestCaseEntity> findByStatus(RuleStatus status);
 }

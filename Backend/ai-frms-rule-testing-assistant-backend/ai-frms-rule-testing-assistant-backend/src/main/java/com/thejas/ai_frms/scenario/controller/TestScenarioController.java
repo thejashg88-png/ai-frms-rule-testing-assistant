@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping(ApiPathConstants.SCENARIOS)
+@RequestMapping({ApiPathConstants.SCENARIOS, "/api/scenarios"})
 public class TestScenarioController {
 
     private final TestScenarioService testScenarioService;

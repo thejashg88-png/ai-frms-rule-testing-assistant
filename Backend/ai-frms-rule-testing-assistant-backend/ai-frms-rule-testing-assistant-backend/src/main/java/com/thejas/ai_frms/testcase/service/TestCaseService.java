@@ -30,5 +30,5 @@ public interface TestCaseService {
 
     TestCaseResponse changeTestCaseStatus(Long testCaseId, RuleStatus status);
 
-    void deleteTestCase(Long testCaseId);
+    String deleteTestCase(Long testCaseId);
 }

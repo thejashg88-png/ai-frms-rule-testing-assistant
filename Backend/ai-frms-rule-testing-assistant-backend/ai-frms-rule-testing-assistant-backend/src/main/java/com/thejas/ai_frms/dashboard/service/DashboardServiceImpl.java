@@ -4,7 +4,9 @@ import com.thejas.ai_frms.common.enums.ExecutionStatus;
 import com.thejas.ai_frms.dashboard.dto.DashboardSummaryResponse;
 import com.thejas.ai_frms.dashboard.dto.ExecutionTrendResponse;
 import com.thejas.ai_frms.dashboard.dto.RuleWiseExecutionStats;
+import com.thejas.ai_frms.execution.dto.ExecuteTestResponse;
 import com.thejas.ai_frms.execution.entity.TestExecutionEntity;
+import com.thejas.ai_frms.execution.mapper.TestExecutionMapper;
 import com.thejas.ai_frms.execution.repository.TestExecutionRepository;
 import com.thejas.ai_frms.rule.entity.RuleEntity;
 import com.thejas.ai_frms.rule.repository.RuleRepository;
@@ -13,6 +15,10 @@ import com.thejas.ai_frms.scenario.repository.TestScenarioRepository;
 import com.thejas.ai_frms.testcase.repository.TestCaseRepository;
 import com.thejas.ai_frms.transaction.repository.TransactionRepository;
 import jakarta.persistence.criteria.Predicate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +31,8 @@ import java.util.List;
 
 @Service
 public class DashboardServiceImpl implements DashboardService {
+
+    private static final Logger log = LoggerFactory.getLogger(DashboardServiceImpl.class);
 
     private final RuleRepository ruleRepository;
     private final TransactionRepository transactionRepository;
@@ -55,11 +63,20 @@ public class DashboardServiceImpl implements DashboardService {
         long totalTestCases = testCaseRepository.count();
         long totalExecutions = testExecutionRepository.count();
 
+        log.info("[DASHBOARD] Total rules count={}", totalRules);
+        log.info("[DASHBOARD] Total transactions count={}", totalTransactions);
+        log.info("[DASHBOARD] Total scenarios count={}", totalScenarios);
+        log.info("[DASHBOARD] Total test cases count={}", totalTestCases);
+        log.info("[DASHBOARD] Total executions count={}", totalExecutions);
+
         long passedExecutions = countExecutionsByStatus(ExecutionStatus.PASSED);
         long failedExecutions = countExecutionsByStatus(ExecutionStatus.FAILED);
         long errorExecutions = countExecutionsByStatus(ExecutionStatus.ERROR);
         long runningExecutions = countExecutionsByStatus(ExecutionStatus.RUNNING);
         long pendingExecutions = countExecutionsByStatus(ExecutionStatus.PENDING);
+
+        log.info("[DASHBOARD] Execution breakdown passed={}, failed={}, error={}, running={}, pending={}",
+                passedExecutions, failedExecutions, errorExecutions, runningExecutions, pendingExecutions);
 
         DashboardSummaryResponse response = new DashboardSummaryResponse();
         response.setTotalRules(totalRules);
@@ -166,6 +183,17 @@ public class DashboardServiceImpl implements DashboardService {
         stats.setSuccessRate(calculatePercentage(passedExecutions, totalExecutions));
 
         return stats;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ExecuteTestResponse> getRecentExecutions(int limit) {
+        int maxLimit = limit > 0 ? limit : 10;
+        PageRequest pageable = PageRequest.of(0, maxLimit, Sort.by(Sort.Direction.DESC, "startedAt"));
+        return testExecutionRepository.findAll(pageable).getContent()
+                .stream()
+                .map(e -> TestExecutionMapper.toExecutionResponse(e, List.of()))
+                .toList();
     }
 
     private long countExecutionsByStatus(ExecutionStatus status) {

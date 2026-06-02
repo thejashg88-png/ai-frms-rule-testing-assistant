@@ -29,4 +29,11 @@ public class ComparisonResult {
     private BigDecimal actualRiskScore;
 
     private String message;
+
+    // Enriched fields for clear response and debugging
+    private String expectedOutcome;   // "PASS" or "FAIL" — test designer's intent
+    private String failureReason;     // e.g. "Expected action MONITOR but actual action ACCEPT"
+    private String ruleType;          // which rule type was evaluated
+    private BigDecimal inputAmount;   // the amount that was tested
+    private String engineNote;        // additional context from rule engine (e.g., baseline evaluation details)
 }

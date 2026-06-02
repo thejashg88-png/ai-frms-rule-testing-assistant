@@ -19,9 +19,12 @@ import com.thejas.ai_frms.scenario.entity.TestScenarioEntity;
 import com.thejas.ai_frms.scenario.repository.TestScenarioRepository;
 import com.thejas.ai_frms.testcase.dto.ExpectedResult;
 import com.thejas.ai_frms.testcase.dto.TestInputData;
+import com.thejas.ai_frms.common.enums.RuleStatus;
 import com.thejas.ai_frms.testcase.entity.TestCaseEntity;
 import com.thejas.ai_frms.testcase.repository.TestCaseRepository;
 import jakarta.persistence.criteria.Predicate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +39,8 @@ import java.util.List;
 
 @Service
 public class TestExecutionServiceImpl implements TestExecutionService {
+
+    private static final Logger log = LoggerFactory.getLogger(TestExecutionServiceImpl.class);
 
     private static final String EXECUTION_TYPE_TEST_CASE = "TEST_CASE";
     private static final String EXECUTION_TYPE_SCENARIO = "SCENARIO";
@@ -97,12 +102,24 @@ public class TestExecutionServiceImpl implements TestExecutionService {
     @Override
     @Transactional
     public ExecuteTestResponse executeScenario(ExecuteScenarioRequest request) {
+        log.info("[SCENARIO EXECUTION] scenarioId={}, executedBy={}", request.getScenarioId(), request.getExecutedBy());
+
         TestScenarioEntity scenario = getScenarioEntity(request.getScenarioId());
 
-        List<TestCaseEntity> testCases = testCaseRepository.findByScenarioScenarioId(request.getScenarioId());
+        List<TestCaseEntity> allTestCases = testCaseRepository.findByScenarioScenarioId(request.getScenarioId());
+        List<TestCaseEntity> activeTestCases = testCaseRepository.findByScenarioScenarioIdAndStatus(
+                request.getScenarioId(), RuleStatus.ACTIVE);
 
-        if (testCases.isEmpty()) {
-            throw new BadRequestException("No test cases found for scenario id: " + request.getScenarioId());
+        log.info("[SCENARIO EXECUTION] total test cases in scenario={}, active test cases count={}",
+                allTestCases.size(), activeTestCases.size());
+
+        int skippedCount = allTestCases.size() - activeTestCases.size();
+        if (skippedCount > 0) {
+            log.info("[SCENARIO EXECUTION] skipping {} inactive/deleted test cases", skippedCount);
+        }
+
+        if (activeTestCases.isEmpty()) {
+            throw new BadRequestException("No active test cases found for this scenario");
         }
 
         TestExecutionEntity execution = new TestExecutionEntity();
@@ -111,17 +128,25 @@ public class TestExecutionServiceImpl implements TestExecutionService {
         execution.setScenario(scenario);
         execution.setExecutedBy(request.getExecutedBy());
         execution.setStartedAt(LocalDateTime.now());
-        execution.setTotalCount(testCases.size());
+        execution.setTotalCount(activeTestCases.size());
 
         TestExecutionEntity savedExecution = testExecutionRepository.save(execution);
 
-        List<TestExecutionResultEntity> resultList = testCases.stream()
-                .map(testCase -> executeSingleTestCase(savedExecution, testCase))
+        List<TestExecutionResultEntity> resultList = activeTestCases.stream()
+                .map(testCase -> {
+                    log.info("[SCENARIO EXECUTION] executing testCaseId={}, status={}",
+                            testCase.getTestCaseId(), testCase.getStatus());
+                    return executeSingleTestCase(savedExecution, testCase);
+                })
                 .toList();
 
         List<TestExecutionResultEntity> savedResults = testExecutionResultRepository.saveAll(resultList);
 
         updateExecutionSummary(savedExecution, savedResults);
+
+        log.info("[SCENARIO EXECUTION] summary total={}, passed={}, failed={}, errors={}",
+                savedExecution.getTotalCount(), savedExecution.getPassedCount(),
+                savedExecution.getFailedCount(), savedExecution.getErrorCount());
 
         TestExecutionEntity completedExecution = testExecutionRepository.save(savedExecution);
 
@@ -197,9 +222,24 @@ public class TestExecutionServiceImpl implements TestExecutionService {
             TestExecutionEntity execution,
             TestCaseEntity testCase
     ) {
+        log.info("[EXECUTION] Running testCaseId={}, testCaseName={}",
+                testCase.getTestCaseId(), testCase.getTestCaseName());
         try {
             TestInputData inputData = JsonUtil.fromJson(testCase.getInputDataJson(), TestInputData.class);
             ExpectedResult expectedResult = JsonUtil.fromJson(testCase.getExpectedResultJson(), ExpectedResult.class);
+
+            // Default null currency — does not affect rule evaluation but keeps data clean
+            if (inputData != null && (inputData.getCurrency() == null || inputData.getCurrency().isBlank())) {
+                inputData.setCurrency("INR");
+            }
+
+            if (inputData == null || inputData.getAmount() == null) {
+                throw new IllegalArgumentException("inputData.amount is required for rule evaluation");
+            }
+
+            log.info("[EXECUTION] Expected action={}, expectedOutcome={}",
+                    expectedResult != null ? expectedResult.getExpectedAction() : "null",
+                    expectedResult != null ? expectedResult.getExpectedOutcome() : "null");
 
             ComparisonResult actualResult = ruleExecutionEngine.execute(testCase, inputData);
             ComparisonResult comparisonResult = resultComparisonService.compare(expectedResult, actualResult);
@@ -213,16 +253,22 @@ public class TestExecutionServiceImpl implements TestExecutionService {
             result.setExpectedEvaluationStatus(comparisonResult.getExpectedEvaluationStatus());
             result.setActualEvaluationStatus(comparisonResult.getActualEvaluationStatus());
             result.setMessage(comparisonResult.getMessage());
+            result.setFailureReason(comparisonResult.getFailureReason());
+            result.setExpectedOutcome(comparisonResult.getExpectedOutcome());
             result.setComparisonResultJson(JsonUtil.toJson(comparisonResult));
             result.setExecutedAt(LocalDateTime.now());
 
             return result;
         } catch (Exception exception) {
+            log.error("[EXECUTION] testCaseId={} — execution error: {}",
+                    testCase.getTestCaseId(), exception.getMessage(), exception);
+
             TestExecutionResultEntity result = new TestExecutionResultEntity();
             result.setExecution(execution);
             result.setTestCase(testCase);
             result.setResultStatus(ExecutionStatus.ERROR);
-            result.setMessage("Execution failed: " + exception.getMessage());
+            result.setMessage("Execution error: " + exception.getMessage());
+            result.setFailureReason(exception.getMessage());
             result.setExecutedAt(LocalDateTime.now());
 
             return result;

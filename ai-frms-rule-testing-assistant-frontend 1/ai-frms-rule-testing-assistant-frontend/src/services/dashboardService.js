@@ -38,7 +38,12 @@ export const dashboardService = {
     if (isMock) { await delay(); return mockSummary }
     try {
       const resp = await dashboardApi.getSummary()
-      return resp?.data ?? resp
+      // Handle: response.data.data, response.data, or response directly
+      const raw = resp?.data?.data ?? resp?.data ?? resp
+      return {
+        ...raw,
+        totalScenarios: raw?.totalScenarios ?? 0,
+      }
     } catch (err) {
       throw new Error(errorHandlerService.getErrorMessage(err))
     }

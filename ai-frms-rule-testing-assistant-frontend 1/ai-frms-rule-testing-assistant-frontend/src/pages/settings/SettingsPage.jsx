@@ -5,18 +5,20 @@ import Input from '../../components/common/Input'
 import Select from '../../components/common/Select'
 import Button from '../../components/common/Button'
 import { useToast } from '../../hooks/useToast'
+import { useTheme } from '../../hooks/useTheme'
 
 const THEME_OPTIONS = [
-  { value: 'light', label: 'Light' },
-  { value: 'dark',  label: 'Dark (coming soon)' },
+  { value: 'light',  label: 'Light' },
+  { value: 'dark',   label: 'Dark' },
+  { value: 'system', label: 'System (follow OS)' },
 ]
 
 const SettingsPage = () => {
   const { addToast } = useToast()
+  const { theme, setTheme } = useTheme()
   const [settings, setSettings] = useState({
     appName: import.meta.env.VITE_APP_NAME ?? 'AI FRMS',
     apiUrl: import.meta.env.VITE_API_BASE_URL ?? '',
-    theme: 'light',
     pageSize: '20',
   })
 
@@ -34,7 +36,13 @@ const SettingsPage = () => {
         <Card title="Application" subtitle="General application settings">
           <Input label="App Name" name="appName" value={settings.appName} onChange={set} />
           <Input label="API Base URL" name="apiUrl" value={settings.apiUrl} onChange={set} helperText="Backend API URL — set in .env file" />
-          <Select label="Theme" name="theme" options={THEME_OPTIONS} value={settings.theme} onChange={set} />
+          <Select
+            label="Theme"
+            name="theme"
+            options={THEME_OPTIONS}
+            value={theme}
+            onChange={(e) => setTheme(e.target.value)}
+          />
           <Input label="Default Page Size" name="pageSize" type="number" value={settings.pageSize} onChange={set} />
           <Button variant="primary" onClick={handleSave}>Save Settings</Button>
         </Card>

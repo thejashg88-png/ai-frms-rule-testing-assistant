@@ -76,6 +76,8 @@
   border-radius: var(--radius);
   font-size: 14px;
   transition: var(--transition);
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .input:focus {
@@ -118,7 +120,8 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   font-size: 14px;
-  background: white;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   cursor: pointer;
 }
 
@@ -144,7 +147,8 @@
 }
 
 .modal {
-  background: white;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   border-radius: var(--radius);
   box-shadow: var(--shadow-lg);
   animation: slideUp 0.3s;
@@ -272,8 +276,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(248, 250, 252, 0.9);
   z-index: 9999;
+}
+
+[data-theme="dark"] .loader-fullscreen {
+  background: rgba(15, 23, 42, 0.9);
 }
 
 /* ==================== TOAST ==================== */
@@ -288,7 +296,8 @@
 }
 
 .toast {
-  background: white;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   border-radius: var(--radius);
   box-shadow: var(--shadow-lg);
   padding: 16px;

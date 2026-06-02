@@ -1,5 +1,6 @@
 package com.thejas.ai_frms.ai.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.thejas.ai_frms.common.enums.RuleAction;
 import com.thejas.ai_frms.common.enums.RuleStatus;
 
@@ -20,6 +21,7 @@ public class AiRuleExplanationRequest {
     private BigDecimal maxAmount;
     private BigDecimal percentageThreshold;
 
+    @JsonAlias("description")
     private String ruleDescription;
 
     public Long getRuleId() {

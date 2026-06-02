@@ -4,8 +4,8 @@ import Loader from '../common/Loader'
 const AiResponseBox = ({ loading, content, error }) => {
   return (
     <div style={{
-      background: '#f8fafc',
-      border: '1px solid var(--border)',
+      background: 'var(--color-ai-response-bg)',
+      border: '1px solid var(--color-ai-border)',
       borderRadius: 10,
       padding: 20,
       minHeight: 120,

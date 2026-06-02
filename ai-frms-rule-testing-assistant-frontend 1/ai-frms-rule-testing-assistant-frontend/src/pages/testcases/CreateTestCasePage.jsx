@@ -14,6 +14,7 @@ const CreateTestCasePage = () => {
 
   const handleSubmit = async (formData) => {
     setLoading(true)
+    console.log('[Create Test Case Final Form Data]', formData)
     try {
       await testCaseService.create(formData)
       addToast('Test case created successfully', 'success')
@@ -24,10 +25,20 @@ const CreateTestCasePage = () => {
 
   return (
     <div>
-      <PageHeader title="Create Test Case" subtitle="Define a new test case for rule validation"
-        actions={<Button variant="ghost" onClick={() => navigate('/testcases')}>← Back</Button>} />
+      <PageHeader
+        title="Create Test Case"
+        subtitle="Define a new test case for rule validation"
+        actions={<Button variant="ghost" onClick={() => navigate('/testcases')}>← Back</Button>}
+      />
+
       <Card title="Test Case Details">
-        <TestCaseForm onSubmit={handleSubmit} onCancel={() => navigate('/testcases')} loading={loading} submitLabel="Create Test Case" />
+        <TestCaseForm
+          initialValues={{}}
+          onSubmit={handleSubmit}
+          onCancel={() => navigate('/testcases')}
+          loading={loading}
+          submitLabel="Create Test Case"
+        />
       </Card>
     </div>
   )

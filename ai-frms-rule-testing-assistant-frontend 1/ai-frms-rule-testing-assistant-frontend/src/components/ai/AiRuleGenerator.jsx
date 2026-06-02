@@ -3,6 +3,7 @@ import { Sparkles } from 'lucide-react'
 import TextArea from '../common/TextArea'
 import Button from '../common/Button'
 import aiService from '../../services/aiService'
+import { ALL_RULE_FIELDS, shouldShowRuleField } from '../../data/ruleFieldConfig'
 
 const normalizeRiskNotes = (rn) => {
   if (Array.isArray(rn)) return rn
@@ -11,18 +12,27 @@ const normalizeRiskNotes = (rn) => {
   return []
 }
 
-const mapToFormValues = (data) => ({
-  name:                data.ruleName              ?? '',
-  description:         data.ruleDescription       ?? '',
-  ruleType:            data.ruleType              ?? '',
-  action:              data.action                ?? '',
-  status:              data.status                ?? 'ACTIVE',
-  txnCount:            data.txnCount       != null ? String(data.txnCount)                     : '',
-  txnAmount:           data.txnAmount      != null ? String(Number(data.txnAmount))             : '',
-  frequency:           data.frequency      != null ? String(data.frequency)                     : '',
-  maxAmount:           data.maxAmount      != null ? String(data.maxAmount)                     : '',
-  percentageThreshold: data.percentageThreshold != null ? String(data.percentageThreshold)      : '',
-})
+const mapToFormValues = (data) => {
+  const ruleType = data.ruleType ?? ''
+  const values = {
+    name:                data.ruleName              ?? '',
+    description:         data.ruleDescription       ?? '',
+    ruleType,
+    action:              data.action                ?? '',
+    status:              data.status                ?? 'ACTIVE',
+    txnCount:            data.txnCount       != null ? String(data.txnCount)            : '',
+    txnAmount:           data.txnAmount      != null ? String(Number(data.txnAmount))   : '',
+    frequency:           data.frequency      != null ? String(data.frequency)           : '',
+    maxAmount:           data.maxAmount      != null ? String(data.maxAmount)           : '',
+    percentageThreshold: data.percentageThreshold != null ? String(data.percentageThreshold) : '',
+  }
+  // Nullify parameter fields not applicable to the AI-suggested ruleType,
+  // so the form does not pre-fill irrelevant fields.
+  ALL_RULE_FIELDS.forEach((field) => {
+    if (!shouldShowRuleField(ruleType, field)) values[field] = ''
+  })
+  return values
+}
 
 const AiRuleGenerator = ({ onGenerate }) => {
   const [requirement, setRequirement] = useState('')

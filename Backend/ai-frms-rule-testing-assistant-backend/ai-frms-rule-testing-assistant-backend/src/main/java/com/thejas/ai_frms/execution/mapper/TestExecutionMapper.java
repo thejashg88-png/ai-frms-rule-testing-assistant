@@ -71,11 +71,19 @@ public final class TestExecutionMapper {
         response.setExpectedEvaluationStatus(result.getExpectedEvaluationStatus());
         response.setActualEvaluationStatus(result.getActualEvaluationStatus());
         response.setMessage(result.getMessage());
+        response.setFailureReason(result.getFailureReason());
+        response.setExpectedOutcome(result.getExpectedOutcome());
 
         if (result.getComparisonResultJson() != null && !result.getComparisonResultJson().isBlank()) {
-            response.setComparisonResult(
-                    JsonUtil.fromJson(result.getComparisonResultJson(), ComparisonResult.class)
-            );
+            ComparisonResult cr = JsonUtil.fromJson(result.getComparisonResultJson(), ComparisonResult.class);
+            response.setComparisonResult(cr);
+            if (cr != null) {
+                response.setRuleType(cr.getRuleType());
+                response.setInputAmount(cr.getInputAmount());
+                // Backfill in case entity columns were not yet persisted (old records)
+                if (response.getFailureReason() == null) response.setFailureReason(cr.getFailureReason());
+                if (response.getExpectedOutcome() == null) response.setExpectedOutcome(cr.getExpectedOutcome());
+            }
         }
 
         response.setExecutedAt(result.getExecutedAt());

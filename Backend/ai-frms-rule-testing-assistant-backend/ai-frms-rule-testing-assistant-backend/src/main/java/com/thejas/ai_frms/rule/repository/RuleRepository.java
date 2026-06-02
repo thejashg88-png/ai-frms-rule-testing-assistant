@@ -14,4 +14,8 @@ public interface RuleRepository extends JpaRepository<RuleEntity, Long>, JpaSpec
     boolean existsByRuleNameIgnoreCaseAndRuleIdNot(String ruleName, Long ruleId);
 
     List<RuleEntity> findByRuleTypeAndStatus(String ruleType, RuleStatus status);
+
+    List<RuleEntity> findByRuleType(String ruleType);
+
+    List<RuleEntity> findByStatus(RuleStatus status);
 }

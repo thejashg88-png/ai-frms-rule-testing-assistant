@@ -54,12 +54,22 @@ const applyFilters = (data, params) => {
 }
 
 export const scenarioService = {
-  getAll: async (params = {}) => {
-    if (isMock) { await delay(); return applyFilters(mockStore, params) }
+  // Returns ALL scenarios unfiltered; pages do client-side filtering + pagination.
+  getAll: async () => {
+    if (isMock) { await delay(); return mockStore.map(mapScenario) }
     try {
-      const resp = await scenarioApi.getAll(params)
-      const items = resp?.data?.content ?? (Array.isArray(resp?.data) ? resp.data : [])
-      return items.map(mapScenario)
+      const resp = await scenarioApi.getAll({ page: 0, size: 500 })
+      console.log('[Scenarios API Response]', resp)
+      const raw =
+        resp?.data?.content    ??
+        resp?.data?.scenarios  ??
+        (Array.isArray(resp?.data) ? resp.data : null) ??
+        resp?.content          ??
+        resp?.scenarios        ??
+        (Array.isArray(resp) ? resp : [])
+      const normalized = (Array.isArray(raw) ? raw : []).map(mapScenario)
+      console.log('[Scenarios Normalized]', normalized)
+      return normalized
     }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
@@ -86,10 +96,15 @@ export const scenarioService = {
       return s
     }
     try {
+      console.log('[Create Scenario Payload]', data)
       const resp = await scenarioApi.create(data)
       return mapScenario(resp?.data ?? resp)
     }
-    catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
+    catch (err) {
+      console.error('[Create Scenario Error Response]', err?.response?.data)
+      console.error('[Create Scenario Validation Errors]', err?.response?.data?.errors)
+      throw new Error(errorHandlerService.getErrorMessage(err))
+    }
   },
 
   update: async (id, data) => {

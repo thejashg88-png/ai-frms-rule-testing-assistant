@@ -1,0 +1,33 @@
+# Java / Spring Boot
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# IntelliJ / IDE
+.idea/
+*.iml
+
+# Node / React
+node_modules/
+dist/
+build/
+
+# Python / AI service
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Environment / secrets
+.env
+.env.*
+application-local.yml
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
