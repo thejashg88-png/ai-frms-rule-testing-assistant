@@ -99,7 +99,7 @@ const TestCaseForm = ({ initialValues = {}, onSubmit, onCancel, loading = false,
     if (errors[name]) setErrors((p) => ({ ...p, [name]: '' }))
   }
 
-  // Returns true when the given test-case field should be visible for the selected ruleType
+  // Only fields applicable to the selected ruleType are shown AND included in the payload.
   const show = (field) => shouldShowTestCaseField(form.ruleType, field)
 
   const validate = () => {
@@ -125,7 +125,8 @@ const TestCaseForm = ({ initialValues = {}, onSubmit, onCancel, loading = false,
     const errs = validate()
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
 
-    // Build inputData with only the fields visible for the selected rule type
+    // Only include visible fields in inputData so hidden fields are not sent as empty strings.
+    // The rule engine may misinterpret empty string values as zero or invalid input.
     const inputDataPayload = {
       ...(show('cardNumber')      && { cardNumber:       form.inputCardNumber.trim() }),
       ...(show('amount')          && { amount:           Number(form.inputAmount) }),

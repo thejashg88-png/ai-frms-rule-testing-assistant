@@ -3,6 +3,26 @@ package com.thejas.ai_frms.transaction.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Response DTO returned by all transaction endpoints.
+ *
+ * Contains two independent status dimensions:
+ *
+ *   Payment status (from acquirer/POS):
+ *     transactionStatus — e.g. "SUCCESS", "FAILED", "PENDING"
+ *     responseCode      — ISO 8583 response code (e.g. "00" = approved)
+ *     responseMessage   — human-readable acquirer message
+ *
+ *   Risk evaluation status (computed live from active fraud rules):
+ *     riskEvaluationStatus — ACCEPT / MONITOR / REJECT
+ *     triggeredRuleName    — name of the rule that caused the final action (null if no rule matched)
+ *     triggeredRuleType    — type of the triggered rule (e.g. "SINGLE_LARGE_TX")
+ *     triggeredAction      — the action of the triggered rule (same as riskEvaluationStatus)
+ *     riskReason           — human-readable explanation (e.g. "amount 400000 exceeds threshold 200000")
+ *
+ * Risk fields are NOT stored in the database — they are re-calculated at query time
+ * by evaluating all currently ACTIVE rules against the transaction amount.
+ */
 public class TransactionResponse {
 
     private Long transactionId;

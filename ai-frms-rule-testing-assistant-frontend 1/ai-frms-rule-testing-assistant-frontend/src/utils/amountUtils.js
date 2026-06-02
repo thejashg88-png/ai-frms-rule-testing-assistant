@@ -1,3 +1,9 @@
+/**
+ * Formats a numeric amount as a localized currency string.
+ * Falls back to 'INR' when currency is missing or invalid — prevents Intl.NumberFormat
+ * from throwing on an unknown currency code returned by the backend.
+ * Returns '-' for null/undefined/empty to avoid blank cells in tables.
+ */
 export const formatAmount = (amount, currency = 'INR') => {
   if (amount === null || amount === undefined || amount === '') return '-'
 

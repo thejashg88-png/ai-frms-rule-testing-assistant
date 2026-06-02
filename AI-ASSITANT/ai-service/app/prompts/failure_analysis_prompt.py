@@ -1,3 +1,13 @@
+"""
+Prompt builder for POST /api/ai/analyze-failure (Groq provider path).
+
+The actual ruleType from the request is embedded in the user prompt so the LLM
+produces rule-specific guidance. Do NOT substitute a default ruleType (e.g. SINGLE_LARGE_TX)
+when the real one is unknown — the analysis will be misleading for count-based rules.
+
+Expected JSON output keys: possibleReasons (list), debuggingSteps (list),
+recommendedFix (string), riskImpact (string).
+"""
 from app.models.request_models import AnalyzeFailureRequest
 from app.utils.prompt_utils import json_output_instruction
 

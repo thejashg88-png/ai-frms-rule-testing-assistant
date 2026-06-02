@@ -34,6 +34,22 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Service implementation for test case lifecycle management.
+ *
+ * A test case holds the input transaction data and expected rule engine output for one scenario.
+ *
+ * Input data handling:
+ *   - If inputData (nested object) is provided, it is used directly.
+ *   - If absent, the service builds a TestInputData from flat top-level fields (cardNumber, amount, etc.).
+ *   - At least one form must be present; both absent throws a 400.
+ *
+ * Delete behavior:
+ *   - If execution history exists: soft delete (sets status = INACTIVE, record preserved).
+ *   - If no execution history: hard delete (record removed from database).
+ *
+ * Default listing excludes INACTIVE test cases unless status=INACTIVE is explicitly requested.
+ */
 @Service
 public class TestCaseServiceImpl implements TestCaseService {
 

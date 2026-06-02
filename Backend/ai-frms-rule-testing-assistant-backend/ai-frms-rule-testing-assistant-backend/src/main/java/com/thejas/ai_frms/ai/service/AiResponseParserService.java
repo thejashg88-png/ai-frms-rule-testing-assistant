@@ -15,6 +15,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Parses raw JSON responses from the FastAPI AI service into typed Spring Boot DTOs.
+ *
+ * FastAPI always returns responses in the envelope format:
+ *   { "success": true, "message": "...", "data": { ... } }
+ *
+ * Each parse method handles this envelope, extracts the "data" payload, and maps it
+ * to the appropriate DTO. Both camelCase and snake_case keys from FastAPI are supported.
+ *
+ * Fallback behavior: if the response is not JSON or has an unexpected structure,
+ * parsers degrade gracefully — they set the explanation/analysis fields to the raw string
+ * rather than throwing an exception.
+ */
 @Service
 public class AiResponseParserService {
 
@@ -25,6 +38,13 @@ public class AiResponseParserService {
         this.objectMapper.findAndRegisterModules();
     }
 
+    /**
+     * Parses the AI-generated test cases from a FastAPI response string.
+     * Tries three strategies in order:
+     *   1. FastAPI envelope: data is a JSON array directly
+     *   2. FastAPI envelope: data is an object with a nested test_cases / testCases array
+     *   3. Fallback: scan the raw response string for any JSON array bracket
+     */
     public List<TestCaseCreateRequest> parseGeneratedTestCases(String aiResponse) {
         if (aiResponse == null || aiResponse.isBlank()) {
             return Collections.emptyList();

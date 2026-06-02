@@ -32,6 +32,10 @@ const extractValidationErrors = (err) => {
   return null
 }
 
+// Converts the flat TestCaseForm state to the nested TestCaseDTO the backend expects.
+// expectedResult MUST remain an object (ExpectedResult DTO) — never a plain string.
+// Sending it as a string breaks backend deserialization.
+// inputData defaults currency to 'INR' because the rule engine requires a non-null currency.
 const toApiPayload = (data) => {
   const payload = {
     testCaseName: (data.testCaseName ?? data.name ?? '').trim(),
@@ -50,6 +54,8 @@ const toApiPayload = (data) => {
       countryCode:     (data.inputData?.countryCode ?? data.inputData?.country ?? '').trim().toUpperCase(),
       currency:        data.inputData?.currency          || 'INR',
     },
+    // expectedResult is an object matching backend ExpectedResult DTO —
+    // do not flatten these fields to the top level.
     expectedResult: {
       expectedOutcome:   data.expectedResult    ?? 'PASS',
       expectedAction:    data.expectedAction     ?? 'MONITOR',

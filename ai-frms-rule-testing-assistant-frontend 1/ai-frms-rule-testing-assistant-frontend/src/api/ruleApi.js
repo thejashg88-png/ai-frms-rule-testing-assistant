@@ -1,37 +1,35 @@
 import axiosInstance from './axiosConfig'
 
+// All functions return response.data — the backend wraps everything in
+// ApiResponse<T> { success, message, data, timestamp }; ruleService unwraps further.
 export const ruleApi = {
-  // Get all rules with optional filters
+  // Supports page/size params; ruleService requests size=500 to load all at once.
   getAllRules: async (params = {}) => {
     const response = await axiosInstance.get('/rules', { params })
     return response.data
   },
 
-  // Get single rule by ID
   getRuleById: async (ruleId) => {
     const response = await axiosInstance.get(`/rules/${ruleId}`)
     return response.data
   },
 
-  // Create new rule
+  // Payload is shaped by ruleService.toApiPayload — field names must match backend RuleDTO.
   createRule: async (ruleData) => {
     const response = await axiosInstance.post('/rules', ruleData)
     return response.data
   },
 
-  // Update existing rule
   updateRule: async (ruleId, ruleData) => {
     const response = await axiosInstance.put(`/rules/${ruleId}`, ruleData)
     return response.data
   },
 
-  // Delete rule
   deleteRule: async (ruleId) => {
     const response = await axiosInstance.delete(`/rules/${ruleId}`)
     return response.data
   },
 
-  // Get rule statistics
   getRuleStats: async () => {
     const response = await axiosInstance.get('/rules/stats')
     return response.data

@@ -25,6 +25,22 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Service implementation for transaction management.
+ *
+ * Important design decisions:
+ *   - Risk evaluation (riskEvaluationStatus, triggeredRuleName, triggeredAction, riskReason)
+ *     is NOT stored in the database. It is computed live on every GET request by evaluating
+ *     all currently ACTIVE rules against the transaction amount.
+ *   - This means: adding or deactivating a rule immediately affects the risk status
+ *     shown for existing transactions without any migration or data update.
+ *   - For the search endpoint (GET /api/transactions), all active rules are loaded once
+ *     per request and then applied to every transaction in the page to avoid N+1 queries.
+ *
+ * Payment status vs risk status:
+ *   transactionStatus / responseCode = payment outcome from the acquirer (e.g. SUCCESS / FAILED / 00)
+ *   riskEvaluationStatus             = fraud risk from active rule evaluation (ACCEPT / MONITOR / REJECT)
+ */
 @Service
 public class TransactionServiceImpl implements TransactionService {
 

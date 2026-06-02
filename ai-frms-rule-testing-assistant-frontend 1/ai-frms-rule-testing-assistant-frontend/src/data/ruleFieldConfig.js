@@ -1,8 +1,13 @@
-// Shared rule-type field configuration used by RuleForm, TestCaseForm, and AI generators.
-// ruleFields       — parameter fields shown in Create/Edit Rule form
-// testCaseFields   — transaction input fields shown in Create/Edit Test Case form
+// Single source of truth for which form fields are shown/required per rule type.
+// Used by RuleForm, TestCaseForm, and AI generators.
+//
+// ruleFields         — parameter fields shown in Create/Edit Rule form
+// testCaseFields     — transaction input fields shown in Create/Edit Test Case form
 // requiredRuleFields — ruleFields that must be non-empty when this ruleType is selected
-// hint             — one-line guidance shown below the rule type selector
+// hint               — one-line guidance shown below the rule type selector
+//
+// Rule types not listed here (e.g. EXCEED_DAILY_LIMIT, ANNUAL_TXN_VOLUME) fall back to
+// showing ALL fields in forms (shouldShowRuleField returns true when config is absent).
 
 export const RULE_FIELD_CONFIG = {
   STRUCTURING: {
@@ -69,6 +74,8 @@ export const RULE_FIELD_CONFIG = {
     hint:               'Required: Txn Count and Frequency. Test should include an MCC code.',
   },
 
+  // SINGLE_LARGE_TX uses only maxAmount — count/frequency fields are intentionally hidden
+  // and sent as null. Adding txnCount here would cause false validation errors.
   SINGLE_LARGE_TX: {
     ruleFields:         ['maxAmount'],
     testCaseFields:     ['amount', 'cardNumber', 'merchantId', 'transactionType', 'channel', 'countryCode', 'currency'],

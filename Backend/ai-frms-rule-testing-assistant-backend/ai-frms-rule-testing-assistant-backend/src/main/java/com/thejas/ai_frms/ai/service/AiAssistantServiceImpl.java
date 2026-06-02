@@ -37,6 +37,24 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Service implementation for AI assistant features.
+ *
+ * Acts as the bridge between the Spring Boot REST layer and the FastAPI Python AI service.
+ * All AI computation happens inside FastAPI — this service only orchestrates the call:
+ *   1. Enriches the request with data from the database (rule fields, scenario fields, execution data).
+ *   2. Maps to a FastAPI-compatible DTO.
+ *   3. Delegates to AiServiceClient (HTTP POST to FastAPI).
+ *   4. Parses the raw FastAPI response via AiResponseParserService.
+ *
+ * Test case generation supports three flows:
+ *   scenarioId provided → fetch scenario → fetch linked rule → enrich request
+ *   ruleId provided     → fetch rule from DB → enrich request
+ *   inline fields       → use directly as provided
+ *
+ * AiServiceException propagates to the controller, which converts it to a success:false response
+ * rather than a 500 error — AI unavailability is expected during development.
+ */
 @Service
 public class AiAssistantServiceImpl implements AiAssistantService {
 

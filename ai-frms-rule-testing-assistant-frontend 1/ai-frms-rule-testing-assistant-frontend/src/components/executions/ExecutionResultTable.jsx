@@ -28,6 +28,7 @@ const ExecutionResultTable = ({ executions = [], loading, emptyMessage = 'No exe
       render: (val, row) => (
         <div>
           <div style={{ fontWeight: 600, marginBottom: 2 }}>{val}</div>
+          {/* normalizedType is set by executionService.mapExecution; fall back to raw executionType */}
           <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
             {TYPE_LABELS[row.normalizedType] ?? row.executionType ?? '—'}
           </div>
@@ -44,6 +45,8 @@ const ExecutionResultTable = ({ executions = [], loading, emptyMessage = 'No exe
       key: 'result',
       label: 'Result',
       width: '100px',
+      // result = what the rule engine actually returned (ACCEPT/MONITOR/REJECT).
+      // Scenario executions have no single result value — shown as —.
       render: (val) => {
         if (!val) return <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>—</span>
         const c = ACTION_COLORS[val] ?? { bg: '#f1f5f9', color: '#475569' }

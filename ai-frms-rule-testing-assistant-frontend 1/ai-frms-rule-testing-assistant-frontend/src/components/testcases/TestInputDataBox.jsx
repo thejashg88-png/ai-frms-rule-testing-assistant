@@ -11,6 +11,7 @@ const Field = ({ label, value }) => (
 
 const TestInputDataBox = ({ inputData }) => {
   const data = inputData ?? {}
+  // Currency defaults to INR when absent to prevent formatAmount from throwing on invalid currency.
   const currency = typeof data.currency === 'string' && data.currency.trim() ? data.currency : 'INR'
   const amount = data.amount ?? null
 

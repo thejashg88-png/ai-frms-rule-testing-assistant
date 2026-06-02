@@ -6,12 +6,30 @@ import com.thejas.ai_frms.common.enums.RuleAction;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * Structured expected result for a test case.
+ *
+ * This is intentionally an object, not a plain string, because:
+ *   - AI-generated test cases may produce either a JSON object or a plain string
+ *   - ExpectedResultDeserializer handles both forms transparently
+ *   - It carries multiple dimensions: action (MONITOR/REJECT/ACCEPT), outcome (PASS/FAIL),
+ *     risk level, and optionally alert codes and risk score
+ *
+ * Key distinction:
+ *   expectedAction  = the fraud rule action the engine should produce (MONITOR, REJECT, ACCEPT)
+ *   expectedOutcome = the test designer's pass/fail intent ("PASS" means the test should pass)
+ *
+ * During execution, the engine compares expectedAction against the actual rule engine output.
+ */
 @JsonDeserialize(using = ExpectedResultDeserializer.class)
 public class ExpectedResult {
 
-    private String expectedOutcome;       // "PASS", "FAIL"
-    private RuleAction expectedAction;    // MONITOR, ACCEPT, REJECT
-    private String expectedRiskLevel;     // "HIGH", "MEDIUM", "LOW"
+    // "PASS" or "FAIL" — the test designer's intent, not the rule action
+    private String expectedOutcome;
+    // The fraud rule action the engine must produce for this test to pass (MONITOR, ACCEPT, REJECT)
+    private RuleAction expectedAction;
+    // Optional risk level expectation: "HIGH", "MEDIUM", "LOW"
+    private String expectedRiskLevel;
     private String expectedEvaluationStatus;
     private String expectedRuleType;
     private List<String> expectedAlertCodes;

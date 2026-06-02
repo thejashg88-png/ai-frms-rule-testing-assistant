@@ -17,6 +17,22 @@ from app.models.request_models import (
 from app.utils.json_utils import parse_llm_json
 
 
+# ---------------------------------------------------------------------------
+# Module: llm_service.py
+#
+# Implements the LLM provider abstraction layer:
+#   BaseLLMProvider     — abstract interface all providers must implement
+#   MockLLMProvider     — deterministic, no API key required; used in dev/test
+#   GroqLLMProvider     — real LLM via Groq's OpenAI-compatible API (AsyncOpenAI)
+#   OpenAIProvider      — placeholder, not yet implemented
+#   AnthropicProvider   — placeholder, not yet implemented
+#   get_llm_provider()  — factory function, reads AI_PROVIDER from settings
+#
+# SECURITY: API keys (GROQ_API_KEY, etc.) must NEVER be logged, returned
+# in responses, or included in error messages. Only log provider name/model.
+# ---------------------------------------------------------------------------
+
+
 class LLMProviderUnavailableError(Exception):
     """Raised when a real LLM provider fails and AI_FALLBACK_TO_MOCK=false."""
 
@@ -642,7 +658,15 @@ def _normalize_to_three_cases(
 # ---------------------------------------------------------------------------
 
 class MockLLMProvider(BaseLLMProvider):
-    """Returns realistic pre-built responses for every operation."""
+    """
+    Fully deterministic provider that requires no API key or network access.
+    Used when AI_PROVIDER=mock, or as the fallback target when Groq fails
+    and AI_FALLBACK_TO_MOCK=true.
+
+    Test case generation always returns exactly 3 cases (ACCEPT/MONITOR/REJECT)
+    derived from the rule's threshold parameters. Explanations and failure
+    analyses are template-based and keyed on ruleType.
+    """
 
     async def generate_test_cases(self, request: GenerateTestCasesRequest) -> dict:
         rule_type = (request.ruleType or "UNKNOWN").upper()
@@ -675,6 +699,8 @@ class MockLLMProvider(BaseLLMProvider):
         return reply
 
     def _mock_chat_reply(self, message: str) -> str:
+        # Keyword-based routing — each branch returns a domain-specific explanation.
+        # Order matters: more specific keywords appear before generic ones.
         msg = message.lower()
 
         if any(k in msg for k in ["high freq", "high frequency", "high_freq_txn"]):
@@ -1705,7 +1731,25 @@ class MockLLMProvider(BaseLLMProvider):
 # ---------------------------------------------------------------------------
 
 class GroqLLMProvider(BaseLLMProvider):
-    """Calls Groq API using the OpenAI-compatible client (AsyncOpenAI)."""
+    """
+    Calls Groq's LLM via the `openai` SDK pointed at Groq's OpenAI-compatible endpoint.
+
+    Two call modes:
+      generate_json_response()  — used by all structured endpoints (test cases, explain,
+                                   analyze, transaction, rule generation). Returns parsed dict.
+      generate_text_response()  — used only by chat(). Returns plain text string.
+                                   Temperature is 0.7 (vs. 0.3 for JSON) for natural replies.
+
+    Fallback behavior:
+      AI_FALLBACK_TO_MOCK=true  → on any exception, delegate to MockLLMProvider
+      AI_FALLBACK_TO_MOCK=false → raise LLMProviderUnavailableError → 503 via global handler
+
+    Exception: generate_test_cases() ALWAYS falls back to the deterministic mock, ignoring
+    AI_FALLBACK_TO_MOCK. This guarantees the frontend never gets a "service unavailable"
+    error for this specific feature, which is critical to the test creation workflow.
+
+    SECURITY: GROQ_API_KEY is passed to AsyncOpenAI and never logged or returned.
+    """
 
     def __init__(self):
         settings = get_settings()
@@ -1715,6 +1759,8 @@ class GroqLLMProvider(BaseLLMProvider):
                 "Set it in .env or switch AI_PROVIDER=mock."
             )
         from openai import AsyncOpenAI
+        # AsyncOpenAI is used here for its async support. Groq exposes an OpenAI-compatible
+        # API, so we simply point base_url at Groq's endpoint — no Groq-specific SDK needed.
         self._client = AsyncOpenAI(
             api_key=settings.GROQ_API_KEY,
             base_url=settings.GROQ_BASE_URL,
@@ -1740,6 +1786,12 @@ class GroqLLMProvider(BaseLLMProvider):
     async def _call_with_fallback(
         self, method_name: str, request, system_prompt: str, user_prompt: str
     ) -> dict:
+        """
+        Calls Groq and applies AI_FALLBACK_TO_MOCK policy on failure.
+        Used by explain_rule, analyze_failure, generate_transaction, generate_rule_from_requirement.
+        NOT used by generate_test_cases (which has its own always-fallback logic)
+        and NOT used by chat (which uses generate_text_response directly).
+        """
         try:
             return await self.generate_json_response(system_prompt, user_prompt)
         except Exception as exc:
@@ -1750,11 +1802,16 @@ class GroqLLMProvider(BaseLLMProvider):
                 logger.warning("[LLM] Falling back to mock provider")
                 mock = MockLLMProvider()
                 return await getattr(mock, method_name)(request)
+            # AI_FALLBACK_TO_MOCK=false → surface the failure as 503 to Spring Boot
             raise LLMProviderUnavailableError(
                 "AI provider is currently unavailable"
             ) from exc
 
     async def generate_test_cases(self, request: GenerateTestCasesRequest) -> dict:
+        # Unlike other endpoints, test case generation ALWAYS falls back to the deterministic
+        # mock on any Groq failure, regardless of AI_FALLBACK_TO_MOCK. This ensures the
+        # frontend never receives a "service unavailable" error during test creation —
+        # getting 3 good-enough test cases is always better than a 503.
         rule_type = (request.ruleType or "UNKNOWN").upper()
         logger.info(f"[AI TEST CASES] Provider selected: groq")
         try:
@@ -1765,6 +1822,7 @@ class GroqLLMProvider(BaseLLMProvider):
             groq_cases = result.get("testCases", [])
             if not isinstance(groq_cases, list) or not groq_cases:
                 raise ValueError(f"Groq returned invalid testCases: {type(groq_cases)}")
+            # Merge Groq results with deterministic fallbacks to guarantee ACCEPT/MONITOR/REJECT
             normalized = _normalize_to_three_cases(groq_cases, request)
             logger.info(f"[AI TEST CASES] Groq returned {len(groq_cases)} case(s), normalized to 3")
             return {"ruleType": rule_type, "testCases": normalized}
@@ -1908,6 +1966,18 @@ class AnthropicProvider(BaseLLMProvider):
 # ---------------------------------------------------------------------------
 
 def get_llm_provider() -> BaseLLMProvider:
+    """
+    Returns the configured LLM provider instance.
+
+    Provider selection: reads AI_PROVIDER from settings (mock | groq | openai | anthropic).
+    Called once per request — providers are lightweight to instantiate.
+
+    Groq init failure (missing API key) falls back silently to mock so the service
+    stays functional even with a misconfigured .env during development. OpenAI and
+    Anthropic raise immediately because they are not yet production-supported.
+
+    Unknown AI_PROVIDER values fall back to mock with a warning rather than crashing.
+    """
     settings = get_settings()
     provider = settings.AI_PROVIDER.lower().strip()
     logger.info(f"[LLM] Provider selected: {provider}")
@@ -1918,6 +1988,7 @@ def get_llm_provider() -> BaseLLMProvider:
         try:
             return GroqLLMProvider()
         except ValueError as exc:
+            # Missing GROQ_API_KEY — warn and degrade gracefully to mock
             logger.warning(f"[LLM] Groq provider init failed: {exc}. Falling back to mock.")
             return MockLLMProvider()
     elif provider == "openai":

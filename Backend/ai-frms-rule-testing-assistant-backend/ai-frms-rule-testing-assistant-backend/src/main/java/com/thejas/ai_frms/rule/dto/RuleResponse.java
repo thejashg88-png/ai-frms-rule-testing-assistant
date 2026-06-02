@@ -6,6 +6,11 @@ import com.thejas.ai_frms.common.enums.RuleStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Response DTO for a fraud rule.
+ * Mirrors RuleEntity fields; returned by all rule endpoints.
+ * Only ACTIVE rules are evaluated during transaction risk assessment and test case execution.
+ */
 public class RuleResponse {
 
     private Long ruleId;

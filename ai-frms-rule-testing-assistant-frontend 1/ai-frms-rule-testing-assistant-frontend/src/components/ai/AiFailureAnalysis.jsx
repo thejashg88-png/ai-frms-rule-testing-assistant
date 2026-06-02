@@ -25,6 +25,7 @@ const AiFailureAnalysis = () => {
   const [response, setResponse] = useState(null)
   const [error, setError] = useState(null)
 
+  // Only FAILED executions are shown in the dropdown — analyzing a passed execution is meaningless.
   useEffect(() => {
     executionService.getAll()
       .then((all) => setExecutions(all.filter((e) => e.normalizedStatus === 'FAILED')))
@@ -48,6 +49,9 @@ const AiFailureAnalysis = () => {
       console.log('[AI Failure Analysis First Result]', firstResult)
       console.log('[AI Failure Analysis Comparison]', comparison)
 
+      // ruleType must come from the actual execution result — never hardcoded.
+      // Different rule types produce different failure patterns, so the AI needs
+      // the real ruleType to give an accurate root cause analysis.
       const ruleType =
         firstResult.ruleType       ||
         comparison.ruleType        ||

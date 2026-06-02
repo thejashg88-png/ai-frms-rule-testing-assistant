@@ -1,3 +1,17 @@
+"""
+Prompt builder for POST /api/ai/generate-transaction (Groq provider path).
+
+Instructs the LLM to produce a realistic ISO 8583-style transaction payload.
+Field format requirements (enforced via the prompt):
+  - amount: zero-padded 11-digit string (e.g. "00000150000" = ₹1,50,000)
+  - rrn: 12-digit retrieval reference number
+  - stan: 6-digit system trace audit number
+
+The transaction amount should be tailored to the expectedResult:
+  REJECT → amount well above the rule threshold
+  MONITOR → amount near the threshold
+  ACCEPT → amount safely below the threshold
+"""
 from app.models.request_models import GenerateTransactionRequest
 from app.utils.prompt_utils import json_output_instruction
 

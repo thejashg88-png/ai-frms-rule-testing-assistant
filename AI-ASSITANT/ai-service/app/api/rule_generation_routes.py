@@ -1,3 +1,10 @@
+"""
+Route: POST /api/ai/generate-rule
+
+Converts a plain-English business requirement into a structured FRMS rule configuration.
+Returns ruleName, ruleType, action, threshold fields, explanation, riskNotes, and confidence.
+Used by the "Generate Rule from Requirement" feature in the rule creation UI.
+"""
 from fastapi import APIRouter, HTTPException
 from loguru import logger
 

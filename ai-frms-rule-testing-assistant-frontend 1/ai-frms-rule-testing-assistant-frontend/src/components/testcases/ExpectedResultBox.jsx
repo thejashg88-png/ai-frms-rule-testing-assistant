@@ -7,6 +7,8 @@ const ACTION_COLORS = {
   MONITOR: { bg: '#fef9c3', color: '#ca8a04' },
 }
 
+// expectedResult can be either a plain string ("PASS"/"FAIL") from older test cases
+// or a full ExpectedResult object from the backend. Both shapes must render safely.
 function getExpectedResultLabel(expectedResult) {
   if (!expectedResult) return 'N/A'
   if (typeof expectedResult === 'string') return expectedResult

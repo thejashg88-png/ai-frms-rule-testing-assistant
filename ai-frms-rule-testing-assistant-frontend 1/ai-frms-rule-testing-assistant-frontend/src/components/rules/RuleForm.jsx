@@ -51,7 +51,8 @@ const RuleForm = ({
   const set = (e) => {
     const { name, value } = e.target
     if (name === 'ruleType') {
-      // Clear parameter fields not applicable to the newly selected rule type
+      // Changing rule type clears fields that are not applicable to the new type,
+      // preventing stale values from being sent to the backend as non-null.
       const cleared = {}
       ALL_RULE_FIELDS.forEach((f) => {
         if (!shouldShowRuleField(value, f)) cleared[f] = ''
@@ -93,7 +94,7 @@ const RuleForm = ({
       ruleType:            form.ruleType,
       action:              form.action,
       status:              form.status,
-      // Send null for fields hidden by the selected rule type
+      // Hidden fields are explicitly sent as null so the backend can clear them on update.
       txnCount:            show('txnCount')            ? numOrNull(form.txnCount)            : null,
       maxAmount:           show('maxAmount')           ? numOrNull(form.maxAmount)           : null,
       txnAmount:           show('txnAmount')           ? numOrNull(form.txnAmount)           : null,

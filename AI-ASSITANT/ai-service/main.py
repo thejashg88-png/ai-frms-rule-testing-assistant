@@ -1,3 +1,15 @@
+"""
+FastAPI entrypoint for the AI-FRMS AI service.
+
+Responsibilities:
+- Boot the FastAPI application and configure Swagger docs
+- Register CORS middleware (allows Spring Boot on port 8080 to call this service)
+- Register all AI endpoint routers
+- Handle LLMProviderUnavailableError globally → returns 503 JSON to Spring Boot
+
+This service runs on port 8000 and is called exclusively by the Spring Boot backend.
+The React frontend never talks to this service directly.
+"""
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,6 +42,9 @@ app = FastAPI(
 
 @app.exception_handler(LLMProviderUnavailableError)
 async def llm_unavailable_handler(request: Request, exc: LLMProviderUnavailableError):
+    # 503 (not 500) signals a temporary upstream failure — Spring Boot uses this to decide
+    # whether to surface a retry-able "service unavailable" message to the frontend.
+    # Raised by GroqLLMProvider when AI_FALLBACK_TO_MOCK=false and the Groq call fails.
     return JSONResponse(
         status_code=503,
         content={"success": False, "message": str(exc), "data": None},

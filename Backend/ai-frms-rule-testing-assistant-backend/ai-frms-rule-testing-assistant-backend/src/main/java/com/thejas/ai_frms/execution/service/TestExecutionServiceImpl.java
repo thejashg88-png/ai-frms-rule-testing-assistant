@@ -37,6 +37,23 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Service implementation for test case and scenario execution.
+ *
+ * Execution flow for a single test case:
+ *   1. Deserialize inputData and expectedResult from stored JSON.
+ *   2. Run RuleExecutionEngine.execute() to get the actual rule action.
+ *   3. Run ResultComparisonService.compare() to check expected vs actual.
+ *   4. Persist TestExecutionResultEntity with PASSED / FAILED / ERROR status.
+ *
+ * Execution flow for a scenario:
+ *   1. Load all ACTIVE test cases for the scenario (INACTIVE are skipped).
+ *   2. Execute each test case independently; collect all results.
+ *   3. Compute overall executionStatus: ERROR > FAILED > PASSED (worst result wins).
+ *
+ * Each execution creates a new TestExecutionEntity — old execution records are never overwritten.
+ * The scenario result reflects only the current run, not historical results.
+ */
 @Service
 public class TestExecutionServiceImpl implements TestExecutionService {
 
@@ -275,6 +292,10 @@ public class TestExecutionServiceImpl implements TestExecutionService {
         }
     }
 
+    /**
+     * Rolls up individual test case results into the parent execution summary.
+     * Status priority: ERROR (if any errored) > FAILED (if any failed) > PASSED (all passed).
+     */
     private void updateExecutionSummary(
             TestExecutionEntity execution,
             List<TestExecutionResultEntity> results

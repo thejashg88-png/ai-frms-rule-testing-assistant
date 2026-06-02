@@ -1,3 +1,10 @@
+"""
+Route: POST /api/ai/analyze-failure
+
+Called by Spring Boot when a test execution produces an unexpected result.
+Returns ruleType-specific debugging guidance covering possibleReasons,
+debuggingSteps, recommendedFix, and riskImpact.
+"""
 from fastapi import APIRouter, HTTPException
 from loguru import logger
 

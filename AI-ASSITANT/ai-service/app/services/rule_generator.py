@@ -5,7 +5,15 @@ from app.services.llm_service import get_llm_provider
 
 
 class RuleGeneratorService:
+    """
+    Thin service layer for POST /api/ai/generate-rule.
+    Converts a natural language requirement into a structured FRMS rule configuration.
+    Mock provider uses regex-based extraction (no API call).
+    Groq provider uses the rule_generation_prompt to get structured JSON from the LLM.
+    """
+
     async def generate(self, request: GenerateRuleRequest) -> dict:
+        """Infers ruleType, action, thresholds, and explanation from the requirement text."""
         llm = get_llm_provider()
         logger.info(f"RuleGeneratorService: generating rule for requirement='{request.requirement[:80]}'")
         result = await llm.generate_rule_from_requirement(request)

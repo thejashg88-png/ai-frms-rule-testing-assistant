@@ -11,6 +11,8 @@ export const reportApi = {
     return response.data
   },
 
+  // responseType: 'blob' so axios keeps the binary body intact for file download.
+  // reportService creates an object URL and triggers a synthetic <a> click to save the file.
   downloadReport: async (type, params = {}) => {
     const response = await axiosInstance.get(`/reports/download/${type}`, {
       params,

@@ -1,3 +1,18 @@
+"""
+Prompt builder for POST /api/ai/generate-rule (Groq provider path).
+
+Instructs the LLM to parse a natural language business requirement and return
+a complete FRMS rule configuration as structured JSON.
+
+Key instructions embedded in the prompt:
+  - Use an explicit UPPER_SNAKE_CASE rule type from the requirement if present (confidence=HIGH)
+  - Infer from keywords if not explicit (confidence=MEDIUM)
+  - Create a descriptive custom type if nothing matches (confidence=LOW)
+  - NEVER default to STRUCTURING arbitrarily for unrelated requirements
+  - Amount encoding: txnAmount as 12-digit zero-padded string, maxAmount as plain float
+  - Frequency always in hours (daily=24, monthly=720, annual=8760)
+  - missingFields must list any threshold the requirement did not specify
+"""
 from app.utils.prompt_utils import json_output_instruction
 
 KNOWN_RULE_TYPES = [

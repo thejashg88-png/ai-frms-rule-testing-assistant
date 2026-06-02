@@ -14,6 +14,8 @@ const SAMPLE_QUESTIONS = [
 const formatTime = (date) =>
   date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
+// Safety renderer — displays only the plain-text reply, never the full JSON response.
+// Guards against cases where normalizeAiChatResponse returns an unexpected shape.
 const renderMessageContent = (content) => {
   if (content === null || content === undefined) return ''
   if (typeof content === 'string') return content

@@ -14,6 +14,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST controller for managing fraud detection rules (CRUD + status management).
+ *
+ * Rules are the core configuration of the FRMS system. Each rule has a type, action,
+ * and type-specific thresholds (maxAmount, txnCount, frequencyHours, etc.).
+ *
+ * Key behavior:
+ *   - Only ACTIVE rules are evaluated during transaction risk assessment and test case execution.
+ *   - PATCH /{ruleId}/status can set a rule to INACTIVE to disable it without deleting it.
+ *   - Rule names must be unique (case-insensitive).
+ *   - Deleting a rule that has linked scenarios or test cases will fail with a 400 (FK constraint).
+ */
 @RestController
 @RequestMapping(ApiPathConstants.RULES)
 public class RuleController {

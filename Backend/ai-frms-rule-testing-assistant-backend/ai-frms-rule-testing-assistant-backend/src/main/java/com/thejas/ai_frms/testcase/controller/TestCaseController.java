@@ -15,6 +15,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST controller for managing test cases.
+ *
+ * A test case defines a specific input (transaction data) and the expected rule engine output.
+ * It must be linked to a scenario, which in turn is linked to a rule.
+ *
+ * Key behavior:
+ *   - inputData can be supplied as a nested object OR as flat top-level fields; service merges them.
+ *   - expectedResult must be a structured object with at minimum an expectedAction field.
+ *   - INACTIVE test cases are excluded from scenario execution but stay in the database.
+ *   - Delete is soft (sets status=INACTIVE) if execution history exists; hard delete otherwise.
+ *   - Accepts both /api/test-cases and /api/testcases as base paths.
+ */
 @RestController
 @RequestMapping({ApiPathConstants.TEST_CASES, "/api/testcases"})
 public class TestCaseController {
