@@ -11,10 +11,14 @@ public class TestInputData {
     private String track2Data;
     private String tid;
     private String mid;
+    private String cardNumber;
+    private String merchantId;
     private String mccCode;
     private BigDecimal amount;
     private String currency;
     private String transactionType;
+    private String channel;
+    private String countryCode;
     private String responseCode;
     private String responseMessage;
     private String transactionStatus;
@@ -68,6 +72,22 @@ public class TestInputData {
         this.mid = mid;
     }
 
+    public String getCardNumber() {
+        return cardNumber;
+    }
+
+    public void setCardNumber(String cardNumber) {
+        this.cardNumber = cardNumber;
+    }
+
+    public String getMerchantId() {
+        return merchantId;
+    }
+
+    public void setMerchantId(String merchantId) {
+        this.merchantId = merchantId;
+    }
+
     public String getMccCode() {
         return mccCode;
     }
@@ -98,6 +118,22 @@ public class TestInputData {
 
     public void setTransactionType(String transactionType) {
         this.transactionType = transactionType;
+    }
+
+    public String getChannel() {
+        return channel;
+    }
+
+    public void setChannel(String channel) {
+        this.channel = channel;
+    }
+
+    public String getCountryCode() {
+        return countryCode;
+    }
+
+    public void setCountryCode(String countryCode) {
+        this.countryCode = countryCode;
     }
 
     public String getResponseCode() {

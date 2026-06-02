@@ -1,21 +1,11 @@
 import React from 'react'
 import Input from '../common/Input'
 import Select from '../common/Select'
+import { RULE_TYPES } from '../../data/ruleTypes'
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE',   label: 'Active' },
   { value: 'INACTIVE', label: 'Inactive' },
-]
-
-const TYPE_OPTIONS = [
-  { value: 'CREDIT',      label: 'Credit' },
-  { value: 'AMOUNT',      label: 'Amount' },
-  { value: 'VELOCITY',    label: 'Velocity' },
-  { value: 'GEO',         label: 'Geographic' },
-  { value: 'FRAUD',       label: 'Fraud' },
-  { value: 'CARD',        label: 'Card' },
-  { value: 'TRANSACTION', label: 'Transaction' },
-  { value: 'FREQUENCY',   label: 'Frequency' },
 ]
 
 const RuleFilter = ({ filters, onChange }) => {
@@ -42,7 +32,7 @@ const RuleFilter = ({ filters, onChange }) => {
         <Select
           name="ruleType"
           placeholder="All Types"
-          options={TYPE_OPTIONS}
+          options={RULE_TYPES}
           value={filters.ruleType}
           onChange={onChange}
         />

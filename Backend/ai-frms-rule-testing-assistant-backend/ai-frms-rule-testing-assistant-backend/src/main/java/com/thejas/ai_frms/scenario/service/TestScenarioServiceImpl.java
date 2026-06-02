@@ -13,6 +13,8 @@ import com.thejas.ai_frms.scenario.entity.TestScenarioEntity;
 import com.thejas.ai_frms.scenario.mapper.TestScenarioMapper;
 import com.thejas.ai_frms.scenario.repository.TestScenarioRepository;
 import jakarta.persistence.criteria.Predicate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +28,8 @@ import java.util.List;
 
 @Service
 public class TestScenarioServiceImpl implements TestScenarioService {
+
+    private static final Logger log = LoggerFactory.getLogger(TestScenarioServiceImpl.class);
 
     private final TestScenarioRepository testScenarioRepository;
     private final RuleRepository ruleRepository;
@@ -41,14 +45,23 @@ public class TestScenarioServiceImpl implements TestScenarioService {
     @Override
     @Transactional
     public TestScenarioResponse createScenario(TestScenarioCreateRequest request) {
+        log.info("[SCENARIO CREATE] Incoming request: scenarioName={}, ruleId={}, ruleType={}, status={}, expectedResult={}",
+                request.getScenarioName(), request.getRuleId(), request.getRuleType(),
+                request.getStatus(), request.getExpectedResult());
+
         if (testScenarioRepository.existsByScenarioNameIgnoreCase(request.getScenarioName())) {
             throw new BadRequestException("Scenario name already exists: " + request.getScenarioName());
         }
 
-        RuleEntity rule = getRuleEntity(request.getRuleId());
+        RuleEntity rule = resolveRule(request);
+
+        log.info("[SCENARIO CREATE] Validation passed — linked to ruleId={}, ruleType={}",
+                rule.getRuleId(), rule.getRuleType());
 
         TestScenarioEntity entity = TestScenarioMapper.toEntity(request, rule);
         TestScenarioEntity savedEntity = testScenarioRepository.save(entity);
+
+        log.info("[SCENARIO CREATE] Saved scenario id: {}", savedEntity.getScenarioId());
 
         return TestScenarioMapper.toResponse(savedEntity);
     }
@@ -130,6 +143,34 @@ public class TestScenarioServiceImpl implements TestScenarioService {
     private RuleEntity getRuleEntity(Long ruleId) {
         return ruleRepository.findById(ruleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Rule not found with id: " + ruleId));
+    }
+
+    private RuleEntity resolveRule(TestScenarioCreateRequest request) {
+        // Prefer explicit ruleId
+        if (request.getRuleId() != null) {
+            return getRuleEntity(request.getRuleId());
+        }
+
+        // Fall back to ruleType lookup
+        if (request.getRuleType() != null && !request.getRuleType().isBlank()) {
+            // Prefer ACTIVE rules first
+            List<RuleEntity> activeRules = ruleRepository.findByRuleTypeAndStatus(
+                    request.getRuleType(), RuleStatus.ACTIVE);
+            if (!activeRules.isEmpty()) {
+                return activeRules.get(0);
+            }
+            // Accept any status if no ACTIVE rule found
+            List<RuleEntity> anyRules = ruleRepository.findByRuleType(request.getRuleType());
+            if (!anyRules.isEmpty()) {
+                return anyRules.get(0);
+            }
+            throw new ResourceNotFoundException(
+                    "No rule found with type: " + request.getRuleType()
+                    + ". Create a rule with this type first.");
+        }
+
+        throw new BadRequestException(
+                "Either ruleId or ruleType is required to create a scenario");
     }
 
     private Pageable buildPageable(

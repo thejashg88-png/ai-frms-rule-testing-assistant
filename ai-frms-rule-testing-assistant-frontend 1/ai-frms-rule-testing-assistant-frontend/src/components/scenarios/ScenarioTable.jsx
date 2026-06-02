@@ -4,8 +4,9 @@ import Table from '../common/Table'
 import Button from '../common/Button'
 import Badge from '../common/Badge'
 
-const ScenarioTable = ({ scenarios, loading, onDelete, deletingId, confirmId, onConfirmDelete, onCancelDelete }) => {
+const ScenarioTable = ({ scenarios = [], loading, onDelete, deletingId, confirmId, onConfirmDelete, onCancelDelete }) => {
   const navigate = useNavigate()
+  const rows = Array.isArray(scenarios) ? scenarios : []
 
   const columns = [
     {
@@ -69,7 +70,7 @@ const ScenarioTable = ({ scenarios, loading, onDelete, deletingId, confirmId, on
   ]
 
   return (
-    <Table columns={columns} data={scenarios} loading={loading} emptyMessage="No scenarios found. Create your first test scenario." />
+    <Table columns={columns} data={rows} loading={loading} emptyMessage="No scenarios found. Create your first test scenario." />
   )
 }
 

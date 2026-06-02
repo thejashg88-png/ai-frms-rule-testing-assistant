@@ -5,12 +5,14 @@ import AiRuleExplanation from '../../components/ai/AiRuleExplanation'
 import AiGenerateTestCases from '../../components/ai/AiGenerateTestCases'
 import AiFailureAnalysis from '../../components/ai/AiFailureAnalysis'
 import AiTransactionGenerator from '../../components/ai/AiTransactionGenerator'
+import AiChat from '../../components/ai/AiChat'
 
 const TABS = [
   { id: 'explain',    label: 'Explain Rule' },
   { id: 'generate',  label: 'Generate Test Cases' },
   { id: 'analyze',   label: 'Failure Analysis' },
   { id: 'txngen',    label: 'Transaction Generator' },
+  { id: 'chat',      label: 'AI Chat' },
 ]
 
 const AiAssistantPage = () => {
@@ -64,6 +66,12 @@ const AiAssistantPage = () => {
       {activeTab === 'txngen' && (
         <Card title="Transaction Generator" subtitle="Generate realistic dummy transactions for testing">
           <AiTransactionGenerator />
+        </Card>
+      )}
+
+      {activeTab === 'chat' && (
+        <Card title="AI Chat" subtitle="Ask questions about fraud rules, test cases, executions, or debugging">
+          <AiChat />
         </Card>
       )}
     </div>

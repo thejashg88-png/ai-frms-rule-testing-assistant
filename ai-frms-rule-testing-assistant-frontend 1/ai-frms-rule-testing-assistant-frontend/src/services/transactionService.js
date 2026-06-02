@@ -4,10 +4,44 @@ import errorHandlerService from './errorHandlerService'
 const isMock = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
 const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms))
 
+const normalizeTransactionStatus = (t) => {
+  const raw = String(
+    t.transactionStatus  ||
+    t.transaction_status ||
+    t.status             ||
+    t.executionStatus    ||
+    ''
+  ).toUpperCase()
+
+  const responseCode = String(t.responseCode || t.response_code || '').trim()
+
+  if (responseCode === '00')                                          return 'APPROVED'
+  if (raw === 'APPROVED' || raw === 'SUCCESS')                        return 'APPROVED'
+  if (raw === 'DECLINED' || raw === 'FAILED' || raw === 'FAILURE')    return 'DECLINED'
+  if (raw === 'PENDING'  || raw === 'PROCESSING')                     return 'PENDING'
+  if (responseCode)                                                   return 'DECLINED'
+
+  return raw || 'UNKNOWN'
+}
+
+const normalizeRiskStatus = (t) => {
+  const raw = String(t.riskEvaluationStatus || t.risk_evaluation_status || '').toUpperCase().trim()
+  if (raw === 'ACCEPT' || raw === 'MONITOR' || raw === 'REJECT') return raw
+  return 'NOT EVALUATED'
+}
+
 const mapTransaction = (t) => ({
   ...t,
-  id: t.transactionId ?? t.id,
-  status: t.transactionStatus ?? t.status,
+  id:                t.transactionId        ?? t.id,
+  transactionType:   t.transactionType      ?? t.transaction_type,
+  status:            normalizeTransactionStatus(t),
+  riskStatus:        normalizeRiskStatus(t),
+  triggeredRuleName: t.triggeredRuleName    ?? t.triggered_rule_name  ?? null,
+  triggeredRuleType: t.triggeredRuleType    ?? t.triggered_rule_type  ?? null,
+  triggeredAction:   t.triggeredAction      ?? t.triggered_action     ?? null,
+  riskReason:        t.riskReason           ?? t.risk_reason          ?? null,
+  responseCode:      t.responseCode         ?? t.response_code        ?? null,
+  responseMessage:   t.responseMessage      ?? t.response_message     ?? null,
 })
 
 let nextId = 20
@@ -16,76 +50,113 @@ const mockStore = [
     id: 1, transactionId: 'TXN-2025-001', cardNumber: '4532015112830366',
     amount: 1500.00, currency: 'USD', merchantId: 'M001', merchantName: 'Amazon Inc',
     merchantCategory: 'E-COMMERCE', transactionType: 'PURCHASE', channel: 'ONLINE',
-    country: 'US', status: 'APPROVED', createdAt: '2025-01-15T10:30:00',
+    country: 'US', status: 'APPROVED', responseCode: '00',
+    riskEvaluationStatus: 'ACCEPT',
+    createdAt: '2025-01-15T10:30:00',
   },
   {
     id: 2, transactionId: 'TXN-2025-002', cardNumber: '5425233430109903',
     amount: 52000.00, currency: 'USD', merchantId: 'M002', merchantName: 'AutoDealer Pro',
     merchantCategory: 'AUTOMOTIVE', transactionType: 'PURCHASE', channel: 'POS',
-    country: 'US', status: 'DECLINED', createdAt: '2025-01-15T11:00:00',
+    country: 'US', status: 'DECLINED', responseCode: '51',
+    riskEvaluationStatus: 'MONITOR',
+    triggeredRuleName: 'Single Large Transaction Rule', triggeredRuleType: 'SINGLE_LARGE_TX',
+    triggeredAction: 'MONITOR', riskReason: 'Transaction amount exceeds threshold',
+    createdAt: '2025-01-15T11:00:00',
   },
   {
     id: 3, transactionId: 'TXN-2025-003', cardNumber: '4916338506082832',
     amount: 200.00, currency: 'USD', merchantId: 'M003', merchantName: 'Shell Gas Station',
     merchantCategory: 'FUEL', transactionType: 'PURCHASE', channel: 'ATM',
-    country: 'US', status: 'APPROVED', createdAt: '2025-01-14T09:15:00',
+    country: 'US', status: 'APPROVED', responseCode: '00',
+    riskEvaluationStatus: 'ACCEPT',
+    createdAt: '2025-01-14T09:15:00',
   },
   {
     id: 4, transactionId: 'TXN-2025-004', cardNumber: '4532015112830366',
     amount: 350.00, currency: 'EUR', merchantId: 'M004', merchantName: 'Paris Boutique',
     merchantCategory: 'RETAIL', transactionType: 'PURCHASE', channel: 'POS',
-    country: 'FR', status: 'DECLINED', createdAt: '2025-01-14T14:20:00',
+    country: 'FR', status: 'DECLINED', responseCode: '05',
+    riskEvaluationStatus: 'REJECT',
+    triggeredRuleName: 'Foreign Transaction Block', triggeredRuleType: 'GEO_BLOCK',
+    triggeredAction: 'REJECT', riskReason: 'Card flagged for foreign country transaction',
+    createdAt: '2025-01-14T14:20:00',
   },
   {
     id: 5, transactionId: 'TXN-2025-005', cardNumber: '5425233430109903',
     amount: 75.50, currency: 'USD', merchantId: 'M005', merchantName: 'Uber Eats',
     merchantCategory: 'FOOD', transactionType: 'PURCHASE', channel: 'MOBILE',
-    country: 'US', status: 'APPROVED', createdAt: '2025-01-13T19:45:00',
+    country: 'US', status: 'APPROVED', responseCode: '00',
+    riskEvaluationStatus: 'ACCEPT',
+    createdAt: '2025-01-13T19:45:00',
   },
   {
     id: 6, transactionId: 'TXN-2025-006', cardNumber: '4916338506082832',
     amount: 5000.00, currency: 'USD', merchantId: 'M006', merchantName: 'Wire Transfer',
     merchantCategory: 'TRANSFER', transactionType: 'TRANSFER', channel: 'ONLINE',
-    country: 'US', status: 'PENDING', createdAt: '2025-01-13T16:00:00',
+    country: 'US', status: 'PENDING',
+    createdAt: '2025-01-13T16:00:00',
   },
   {
     id: 7, transactionId: 'TXN-2025-007', cardNumber: '4532015112830366',
     amount: 120.00, currency: 'USD', merchantId: 'M001', merchantName: 'Amazon Inc',
     merchantCategory: 'E-COMMERCE', transactionType: 'REFUND', channel: 'ONLINE',
-    country: 'US', status: 'APPROVED', createdAt: '2025-01-12T10:00:00',
+    country: 'US', status: 'APPROVED', responseCode: '00',
+    riskEvaluationStatus: 'ACCEPT',
+    createdAt: '2025-01-12T10:00:00',
   },
   {
     id: 8, transactionId: 'TXN-2025-008', cardNumber: '5425233430109903',
     amount: 300.00, currency: 'USD', merchantId: 'M007', merchantName: 'ATM Withdrawal',
     merchantCategory: 'CASH', transactionType: 'WITHDRAWAL', channel: 'ATM',
-    country: 'US', status: 'APPROVED', createdAt: '2025-01-12T08:30:00',
+    country: 'US', status: 'APPROVED', responseCode: '00',
+    riskEvaluationStatus: 'ACCEPT',
+    createdAt: '2025-01-12T08:30:00',
   },
 ]
 
 const applyFilters = (data, params) => {
-  let result = [...data]
+  let result = [...data].map(mapTransaction)
   if (params.status)          result = result.filter((t) => t.status === params.status)
+  if (params.riskStatus)      result = result.filter((t) => t.riskStatus === params.riskStatus)
   if (params.transactionType) result = result.filter((t) => t.transactionType === params.transactionType)
   if (params.channel)         result = result.filter((t) => t.channel === params.channel)
   if (params.search) {
     const q = params.search.toLowerCase()
     result = result.filter(
       (t) =>
-        t.transactionId.toLowerCase().includes(q) ||
-        t.merchantName.toLowerCase().includes(q) ||
-        t.cardNumber.slice(-4).includes(q)
+        (t.transactionId  || '').toLowerCase().includes(q) ||
+        (t.merchantName   || '').toLowerCase().includes(q) ||
+        (t.cardNumber     || '').slice(-4).includes(q)
     )
   }
   return result
 }
 
 export const transactionService = {
+  // Returns ALL transactions (unfiltered); page applies client-side filter + pagination.
   getAll: async (params = {}) => {
     if (isMock) { await delay(); return applyFilters(mockStore, params) }
     try {
-      const resp = await transactionApi.getAll(params)
-      const items = resp?.data?.content ?? (Array.isArray(resp?.data) ? resp.data : [])
-      return items.map(mapTransaction)
+      // Request a large page to fetch all records at once.
+      // Backend defaults to size=10 (Spring Pageable), so we override here.
+      const resp = await transactionApi.getAll({ page: 0, size: 500 })
+      console.log('[Transactions API Response]', resp)
+
+      // Normalise all backend response shapes:
+      //  A) { success, data: { content:[...], totalElements:N } }  — Spring Page
+      //  B) { success, data: [...] }                               — flat array
+      //  C) { success, data: { transactions:[...] } }
+      //  D) plain array
+      const body  = resp?.data ?? resp
+      const raw   =
+        body?.content      ??
+        body?.transactions ??
+        (Array.isArray(body) ? body : [])
+
+      const normalized = (Array.isArray(raw) ? raw : []).map(mapTransaction)
+      console.log('[Transactions Normalized]', normalized)
+      return normalized
     }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
@@ -95,7 +166,7 @@ export const transactionService = {
       await delay()
       const t = mockStore.find((r) => r.id === Number(id))
       if (!t) throw new Error('Transaction not found')
-      return t
+      return mapTransaction(t)
     }
     try {
       const resp = await transactionApi.getById(id)
@@ -109,13 +180,22 @@ export const transactionService = {
       await delay(500)
       const t = { ...data, id: nextId++, createdAt: new Date().toISOString() }
       mockStore.push(t)
-      return t
+      return mapTransaction(t)
     }
     try {
+      console.log('[Create Transaction Payload]', data)
       const resp = await transactionApi.create(data)
       return mapTransaction(resp?.data ?? resp)
     }
-    catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
+    catch (err) {
+      const backendErrors = err?.response?.data?.errors
+      if (Array.isArray(backendErrors) && backendErrors.length > 0) {
+        const error = new Error(backendErrors.join('\n'))
+        error.validationErrors = backendErrors
+        throw error
+      }
+      throw new Error(errorHandlerService.getErrorMessage(err))
+    }
   },
 
   delete: async (id) => {

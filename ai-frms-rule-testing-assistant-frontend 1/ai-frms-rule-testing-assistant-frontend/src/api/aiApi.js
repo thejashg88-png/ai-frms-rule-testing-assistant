@@ -2,7 +2,9 @@ import axiosInstance from './axiosConfig'
 
 export const aiApi = {
   generateTestCases: async (data) => {
+    console.log('[aiApi.generateTestCases request payload]', data)
     const response = await axiosInstance.post('/ai/generate-test-cases', data)
+    console.log('[aiApi.generateTestCases response.data]', response.data)
     return response.data
   },
 
@@ -15,7 +17,9 @@ export const aiApi = {
   },
 
   analyzeFailure: async (data) => {
+    console.log('[aiApi.analyzeFailure request payload]', data)
     const response = await axiosInstance.post('/ai/analyze-failure', data)
+    console.log('[aiApi.analyzeFailure response.data]', response.data)
     return response.data
   },
 
@@ -29,8 +33,10 @@ export const aiApi = {
     return response.data
   },
 
-  chat: async (message, context = {}) => {
-    const response = await axiosInstance.post('/ai/chat', { message, context })
+  chat: async (payload) => {
+    console.log('[AI Chat Request]', payload)
+    const response = await axiosInstance.post('/ai/chat', payload)
+    console.log('[AI Chat Response]', response.data)
     return response.data
   },
 }

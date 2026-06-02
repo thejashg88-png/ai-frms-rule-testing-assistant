@@ -71,6 +71,7 @@ const DashboardPage = () => {
         dashboardService.getSummary(),
         dashboardService.getRecentExecutions(7),
       ])
+      console.log('[Dashboard Summary]', summaryData)
       setSummary(summaryData)
       setRecentExecutions(executionsData)
     } catch (err) {
@@ -86,10 +87,11 @@ const DashboardPage = () => {
   if (error) return <ErrorMessage title="Failed to load dashboard" message={error} onRetry={load} />
 
   const stats = {
-    totalRules:   summary?.totalRules    ?? 0,
-    activeRules:  summary?.activeRules   ?? 0,
-    totalTests:   summary?.totalTestCases ?? 0,
-    successRate:  Math.round(summary?.passRate ?? 0),
+    totalRules:      summary?.totalRules      ?? 0,
+    activeRules:     summary?.activeRules     ?? 0,
+    totalScenarios:  summary?.totalScenarios  ?? 0,
+    totalTests:      summary?.totalTestCases  ?? 0,
+    successRate:     Math.round(summary?.passRate ?? 0),
   }
 
   const totalExec   = summary?.totalExecutions   ?? 0

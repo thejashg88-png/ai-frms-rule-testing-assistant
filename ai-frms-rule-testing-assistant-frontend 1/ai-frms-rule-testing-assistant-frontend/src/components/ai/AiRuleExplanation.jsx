@@ -106,8 +106,8 @@ const AiRuleExplanation = () => {
       {/* ── Structured AI response — all 8 sections always rendered ── */}
       {!loading && !error && response && (
         <div style={{
-          background: '#f8fafc',
-          border: '1px solid var(--border)',
+          background: 'var(--color-ai-response-bg)',
+          border: '1px solid var(--color-ai-border)',
           borderRadius: 10,
           padding: '20px 24px',
         }}>
@@ -116,7 +116,7 @@ const AiRuleExplanation = () => {
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             marginBottom: 20, paddingBottom: 16,
-            borderBottom: '1px solid var(--border)',
+            borderBottom: '1px solid var(--color-ai-border)',
           }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
               AI Rule Explanation

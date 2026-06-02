@@ -100,15 +100,26 @@ const applyFilters = (data, params) => {
 }
 
 export const ruleService = {
-  getAll: async (params = {}) => {
+  // Returns ALL rules unfiltered; pages do client-side filtering + pagination.
+  getAll: async () => {
     if (isMock) {
       await delay()
-      return applyFilters(mockStore, params)
+      return mockStore.map(mapRule)
     }
     try {
-      const resp = await ruleApi.getAllRules(params)
-      const items = resp?.data?.content ?? (Array.isArray(resp?.data) ? resp.data : [])
-      return items.map(mapRule)
+      const resp = await ruleApi.getAllRules({ page: 0, size: 500 })
+      console.log('[Rules API Response]', resp)
+      // Normalise all backend response shapes
+      const raw =
+        resp?.data?.content  ??
+        resp?.data?.rules    ??
+        (Array.isArray(resp?.data) ? resp.data : null) ??
+        resp?.content        ??
+        resp?.rules          ??
+        (Array.isArray(resp) ? resp : [])
+      const normalized = (Array.isArray(raw) ? raw : []).map(mapRule)
+      console.log('[Rules Normalized]', normalized)
+      return normalized
     } catch (err) {
       throw new Error(errorHandlerService.getErrorMessage(err))
     }

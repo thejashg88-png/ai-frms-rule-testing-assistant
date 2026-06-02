@@ -6,7 +6,12 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ExecuteTestCaseRequest {
+public class
+
+
+
+
+ExecuteTestCaseRequest {
 
     @NotNull(message = "Test case id is required")
     private Long testCaseId;

@@ -8,6 +8,47 @@ spring:
     password: root
     driver-class-name: org.postgresql.Driver
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -32,9 +73,12 @@ app:
 
     ai:
       base-url: http://localhost:8000
-      generate-test-cases-path: /ai/generate-test-cases
-      analyze-failure-path: /ai/analyze-failure
-      explain-rule-path: /ai/explain-rule
+      generate-test-cases-path: /api/ai/generate-test-cases
+      analyze-failure-path: /api/ai/analyze-failure
+      explain-rule-path: /api/ai/explain-rule
+      generate-transaction-path: /api/ai/generate-transaction
+      generate-rule-path: /api/ai/generate-rule
+      chat-path: /api/ai/chat
 
   report:
     output-dir: reports

@@ -12,6 +12,8 @@ public interface TestExecutionResultRepository extends JpaRepository<TestExecuti
 
     List<TestExecutionResultEntity> findByTestCaseTestCaseId(Long testCaseId);
 
+    long countByTestCaseTestCaseId(Long testCaseId);
+
     long countByExecutionExecutionIdAndResultStatus(Long executionId, ExecutionStatus resultStatus);
 
     void deleteByExecutionExecutionId(Long executionId);

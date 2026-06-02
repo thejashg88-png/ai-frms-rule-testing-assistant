@@ -24,6 +24,13 @@ public class TransactionResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // Risk evaluation fields — populated at query time from active rules
+    private String riskEvaluationStatus;
+    private String triggeredRuleName;
+    private String triggeredRuleType;
+    private String triggeredAction;
+    private String riskReason;
+
     public Long getTransactionId() {
         return transactionId;
     }
@@ -167,4 +174,19 @@ public class TransactionResponse {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public String getRiskEvaluationStatus() { return riskEvaluationStatus; }
+    public void setRiskEvaluationStatus(String riskEvaluationStatus) { this.riskEvaluationStatus = riskEvaluationStatus; }
+
+    public String getTriggeredRuleName() { return triggeredRuleName; }
+    public void setTriggeredRuleName(String triggeredRuleName) { this.triggeredRuleName = triggeredRuleName; }
+
+    public String getTriggeredRuleType() { return triggeredRuleType; }
+    public void setTriggeredRuleType(String triggeredRuleType) { this.triggeredRuleType = triggeredRuleType; }
+
+    public String getTriggeredAction() { return triggeredAction; }
+    public void setTriggeredAction(String triggeredAction) { this.triggeredAction = triggeredAction; }
+
+    public String getRiskReason() { return riskReason; }
+    public void setRiskReason(String riskReason) { this.riskReason = riskReason; }
 }

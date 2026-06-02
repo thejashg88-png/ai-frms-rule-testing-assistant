@@ -1,5 +1,6 @@
 package com.thejas.ai_frms.ai.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.thejas.ai_frms.common.enums.RuleAction;
 
 import java.math.BigDecimal;
@@ -16,11 +17,13 @@ public class AiTestCaseGenerationRequest {
     private String mccCode;
 
     private Integer txnCount;
+    @JsonAlias("frequency")
     private Integer frequencyHours;
     private BigDecimal txnAmount;
     private BigDecimal maxAmount;
     private BigDecimal percentageThreshold;
 
+    @JsonAlias("description")
     private String ruleDescription;
 
     private Integer numberOfTestCases = 5;

@@ -4,14 +4,56 @@ import errorHandlerService from './errorHandlerService'
 const isMock = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
 const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms))
 
-const mapExecution = (e) => ({
-  ...e,
-  id: e.executionId ?? e.id,
-  status: e.executionStatus != null ? String(e.executionStatus) : (e.status ?? null),
-  entityId: e.testCaseId ?? e.scenarioId ?? e.entityId,
-  entityName: e.testCaseName ?? e.scenarioName ?? e.entityName,
-  executedAt: e.startedAt ?? e.executedAt,
-})
+const normalizeExecutionType = (execution) => {
+  const value = String(
+    execution.executionType || execution.type || execution.referenceType || ''
+  ).toUpperCase()
+
+  if (
+    value === 'TEST_CASE' ||
+    value === 'TESTCASE' ||
+    value === 'TEST_CASE_EXECUTION' ||
+    value.includes('TEST')
+  ) return 'TEST_CASE'
+
+  if (
+    value === 'SCENARIO' ||
+    value === 'SCENARIO_EXECUTION' ||
+    value.includes('SCENARIO')
+  ) return 'SCENARIO'
+
+  if (execution.testCaseId) return 'TEST_CASE'
+  if (execution.scenarioId) return 'SCENARIO'
+  return 'UNKNOWN'
+}
+
+const normalizeExecutionStatus = (execution) => {
+  const value = String(
+    execution.executionStatus ||
+    execution.resultStatus    ||
+    execution.status          ||
+    execution.result          ||
+    ''
+  ).toUpperCase()
+
+  if (value === 'PASS'    || value === 'PASSED'      || value === 'SUCCESS')     return 'PASSED'
+  if (value === 'FAILED'  || value === 'FAIL'         || value === 'ERROR')       return 'FAILED'
+  if (value === 'PENDING' || value === 'RUNNING'      || value === 'IN_PROGRESS') return 'PENDING'
+  return value || 'UNKNOWN'
+}
+
+const mapExecution = (e) => {
+  const mapped = {
+    ...e,
+    id:         e.executionId ?? e.id,
+    entityId:   e.testCaseId  ?? e.scenarioId ?? e.entityId,
+    entityName: e.testCaseName ?? e.scenarioName ?? e.entityName,
+    executedAt: e.startedAt    ?? e.executedAt,
+  }
+  mapped.normalizedType   = normalizeExecutionType(mapped)
+  mapped.normalizedStatus = normalizeExecutionStatus(mapped)
+  return mapped
+}
 
 let nextId = 30
 const mockStore = [
@@ -54,26 +96,28 @@ const mockStore = [
   },
 ]
 
-const applyFilters = (data, params) => {
-  let result = [...data]
-  if (params.status)        result = result.filter((e) => e.status === params.status)
-  if (params.executionType) result = result.filter((e) => e.executionType === params.executionType)
-  if (params.search) {
-    const q = params.search.toLowerCase()
-    result = result.filter((e) => e.entityName.toLowerCase().includes(q))
-  }
-  return result
-}
-
-const ACTIONS = ['ACCEPT', 'MONITOR', 'REJECT']
+const ACTIONS  = ['ACCEPT', 'MONITOR', 'REJECT']
 const STATUSES = ['PASSED', 'FAILED', 'PASSED', 'PASSED']
 
 export const executionService = {
-  getAll: async (params = {}) => {
-    if (isMock) { await delay(); return applyFilters(mockStore, params) }
+  // Fetches all executions — filtering is done client-side in ExecutionsPage.
+  getAll: async () => {
+    if (isMock) {
+      await delay()
+      return mockStore.map(mapExecution)
+    }
     try {
-      const resp = await executionApi.getAll(params)
-      const items = resp?.data?.content ?? (Array.isArray(resp?.data) ? resp.data : [])
+      const resp = await executionApi.getAll()
+      // executionApi already extracts response.data, so resp IS the body.
+      // Try all common Spring/custom response shapes in order.
+      const raw =
+        resp?.data?.content     ??
+        resp?.data?.executions  ??
+        (Array.isArray(resp?.data) ? resp.data : null) ??
+        resp?.content           ??
+        resp?.executions        ??
+        (Array.isArray(resp) ? resp : [])
+      const items = Array.isArray(raw) ? raw : []
       return items.map(mapExecution)
     }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
@@ -84,7 +128,7 @@ export const executionService = {
       await delay()
       const e = mockStore.find((r) => r.id === Number(id))
       if (!e) throw new Error('Execution not found')
-      return e
+      return mapExecution(e)
     }
     try {
       const resp = await executionApi.getById(id)
@@ -101,20 +145,56 @@ export const executionService = {
       const execution = {
         id: nextId++,
         executionType: 'TEST_CASE',
-        entityId: Number(testCaseId),
+        entityId:   Number(testCaseId),
         entityName: testCase?.name ?? `Test Case #${testCaseId}`,
         status,
+        normalizedStatus: status,
+        normalizedType: 'TEST_CASE',
         result,
         failureReason: status === 'FAILED' ? 'Mock: Expected action did not match rule output' : null,
-        executedAt: new Date().toISOString(),
-        durationMs: Math.floor(Math.random() * 300) + 50,
+        executedAt:  new Date().toISOString(),
+        durationMs:  Math.floor(Math.random() * 300) + 50,
       }
       mockStore.unshift(execution)
       return execution
     }
     try {
-      const resp = await executionApi.runTestCase(testCaseId)
-      return mapExecution(resp?.data ?? resp)
+      const raw = await executionApi.runTestCase({ testCaseId: Number(testCaseId), executedBy: null })
+      console.log('[Run Test API Response]', raw)
+
+      // Backend wraps: { success, message, data: { executionStatus, results, ... } }
+      // executionApi already extracts response.data, so raw IS the body.
+      const body = raw?.data ?? raw
+      const firstResult = Array.isArray(body?.results) ? body.results[0] : null
+
+      const status = normalizeExecutionStatus({
+        executionStatus: body?.executionStatus,
+        resultStatus:    firstResult?.resultStatus,
+      })
+
+      const normalizedResult = {
+        id:              body?.executionId  ?? null,
+        executionType:   'TEST_CASE',
+        normalizedType:  'TEST_CASE',
+        entityId:        Number(testCaseId),
+        entityName:      testCase?.name ?? `Test Case #${testCaseId}`,
+        executedAt:      body?.completedAt  ?? body?.executedAt ?? new Date().toISOString(),
+        durationMs:      body?.durationMs   ?? null,
+        status,
+        normalizedStatus: status,
+        // "result" = what the rule actually returned (actualAction)
+        result:          firstResult?.actualAction ?? body?.actualAction ?? null,
+        failureReason:   firstResult?.failureReason ?? (
+          status === 'FAILED' ? (firstResult?.message ?? null) : null
+        ),
+        matched:         firstResult?.comparisonResult?.matched === true,
+        passedCount:     body?.passedCount  ?? 0,
+        failedCount:     body?.failedCount  ?? 0,
+        results:         body?.results      ?? [],
+      }
+
+      console.log('[Run Test Normalized Result]', normalizedResult)
+      return normalizedResult
     }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
@@ -126,20 +206,46 @@ export const executionService = {
       const execution = {
         id: nextId++,
         executionType: 'SCENARIO',
-        entityId: Number(scenarioId),
+        entityId:   Number(scenarioId),
         entityName: scenario?.name ?? `Scenario #${scenarioId}`,
         status,
         result: null,
         failureReason: status === 'FAILED' ? 'Mock: One or more test cases failed in this scenario' : null,
-        executedAt: new Date().toISOString(),
-        durationMs: Math.floor(Math.random() * 1000) + 500,
+        executedAt:  new Date().toISOString(),
+        durationMs:  Math.floor(Math.random() * 1000) + 500,
       }
       mockStore.unshift(execution)
-      return execution
+      return mapExecution(execution)
     }
     try {
-      const resp = await executionApi.runScenario(scenarioId)
-      return mapExecution(resp?.data ?? resp)
+      const raw = await executionApi.runScenario({ scenarioId: Number(scenarioId), executedBy: null })
+      console.log('[Run Scenario API Response]', raw)
+
+      const body = raw?.data ?? raw
+      const status = normalizeExecutionStatus({
+        executionStatus: body?.executionStatus,
+        resultStatus:    body?.executionStatus,
+      })
+
+      const normalizedResult = {
+        id:               body?.executionId  ?? null,
+        executionType:    'SCENARIO',
+        normalizedType:   'SCENARIO',
+        entityId:         Number(scenarioId),
+        entityName:       scenario?.name ?? body?.scenarioName ?? `Scenario #${scenarioId}`,
+        executedAt:       body?.completedAt  ?? body?.executedAt ?? new Date().toISOString(),
+        durationMs:       body?.durationMs   ?? null,
+        status,
+        normalizedStatus: status,
+        result:           null,
+        failureReason:    status === 'FAILED' ? (body?.failureReason ?? body?.message ?? null) : null,
+        passedCount:      body?.passedCount  ?? 0,
+        failedCount:      body?.failedCount  ?? 0,
+        results:          body?.results      ?? [],
+      }
+
+      console.log('[Run Scenario Normalized Result]', normalizedResult)
+      return normalizedResult
     }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },

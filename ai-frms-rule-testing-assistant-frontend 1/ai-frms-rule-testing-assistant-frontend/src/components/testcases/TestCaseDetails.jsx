@@ -12,31 +12,52 @@ const Row = ({ label, value }) => (
 )
 
 const TestCaseDetails = ({ testCase }) => {
-  if (!testCase) return null
-  const lastExec = testCase.lastExecutionStatus
-  const execStatus = lastExec ? STATUSES.EXECUTION_STATUS[lastExec] : null
+  console.log('[TestCaseDetails] testCase', testCase)
+
+  if (!testCase) return (
+    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 14 }}>
+      Test case details not available.
+    </p>
+  )
+
+  const lastExec   = testCase.lastExecutionStatus
+  const execStatus = lastExec ? STATUSES.EXECUTION_STATUS?.[lastExec] : null
+
+  const expectedResult = testCase?.expectedResult
+  // expectedAction may be at top level or nested inside expectedResult object
+  const expectedAction =
+    testCase?.expectedAction ||
+    (expectedResult !== null && typeof expectedResult === 'object'
+      ? expectedResult?.expectedAction
+      : null)
 
   return (
     <div>
-      <Row label="Name" value={<strong>{testCase.name}</strong>} />
-      <Row label="Description" value={testCase.description} />
-      <Row label="Scenario" value={testCase.scenarioName} />
-      <Row label="Rule" value={testCase.ruleName} />
+      <Row label="Name"        value={<strong>{testCase?.name}</strong>} />
+      <Row label="Description" value={testCase?.description} />
+      <Row label="Scenario"    value={testCase?.scenarioName} />
+      <Row label="Rule"        value={testCase?.ruleName} />
       <Row label="Status" value={
-        <Badge bgColor={testCase.status === 'ACTIVE' ? '#d1fae5' : '#fee2e2'} color={testCase.status === 'ACTIVE' ? '#10b981' : '#ef4444'} size="sm">
-          {testCase.status}
+        <Badge
+          bgColor={testCase?.status === 'ACTIVE' ? '#d1fae5' : '#fee2e2'}
+          color  ={testCase?.status === 'ACTIVE' ? '#10b981' : '#ef4444'}
+          size="sm"
+        >
+          {testCase?.status}
         </Badge>
       } />
       {execStatus && (
         <Row label="Last Execution" value={
-          <Badge bgColor={execStatus.bgColor} color={execStatus.color} size="sm">{execStatus.label}</Badge>
+          <Badge bgColor={execStatus.bgColor} color={execStatus.color} size="sm">
+            {execStatus.label}
+          </Badge>
         } />
       )}
-      <Row label="Created" value={testCase.createdAt} />
+      <Row label="Created" value={testCase?.createdAt} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 20 }}>
-        <TestInputDataBox inputData={testCase.inputData ?? {}} />
-        <ExpectedResultBox expectedResult={testCase.expectedResult} expectedAction={testCase.expectedAction} />
+        <TestInputDataBox inputData={testCase?.inputData ?? {}} />
+        <ExpectedResultBox expectedResult={expectedResult} expectedAction={expectedAction} />
       </div>
     </div>
   )

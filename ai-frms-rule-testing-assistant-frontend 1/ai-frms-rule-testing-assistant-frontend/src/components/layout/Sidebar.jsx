@@ -51,7 +51,7 @@ const Sidebar = () => {
       </nav>
 
       <div className="sidebar-footer">
-        {isExpanded && <p>© 2025 FRMS</p>}
+        {isExpanded && <p>© 2026 FRMS</p>}
       </div>
     </aside>
   )

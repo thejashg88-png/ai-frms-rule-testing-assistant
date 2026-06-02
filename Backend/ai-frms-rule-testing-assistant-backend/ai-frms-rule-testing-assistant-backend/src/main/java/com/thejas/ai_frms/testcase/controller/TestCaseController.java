@@ -16,7 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping(ApiPathConstants.TEST_CASES)
+@RequestMapping({ApiPathConstants.TEST_CASES, "/api/testcases"})
 public class TestCaseController {
 
     private final TestCaseService testCaseService;
@@ -93,8 +93,7 @@ public class TestCaseController {
 
     @DeleteMapping("/{testCaseId}")
     public ResponseEntity<ApiResponse<Void>> deleteTestCase(@PathVariable Long testCaseId) {
-        testCaseService.deleteTestCase(testCaseId);
-
-        return ResponseEntity.ok(ApiResponse.success("Test case deleted successfully"));
+        String message = testCaseService.deleteTestCase(testCaseId);
+        return ResponseEntity.ok(ApiResponse.success(message));
     }
 }

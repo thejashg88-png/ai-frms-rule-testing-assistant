@@ -11,8 +11,15 @@ const ACTION_COLORS = {
   MONITOR: { bg: '#fef9c3', color: '#ca8a04' },
 }
 
-const ExecutionResultTable = ({ executions, loading }) => {
+const TYPE_LABELS = {
+  TEST_CASE: 'Test Case',
+  SCENARIO:  'Scenario',
+  UNKNOWN:   'Unknown',
+}
+
+const ExecutionResultTable = ({ executions = [], loading, emptyMessage = 'No executions yet.' }) => {
   const navigate = useNavigate()
+  const rows = Array.isArray(executions) ? executions : []
 
   const columns = [
     {
@@ -21,12 +28,14 @@ const ExecutionResultTable = ({ executions, loading }) => {
       render: (val, row) => (
         <div>
           <div style={{ fontWeight: 600, marginBottom: 2 }}>{val}</div>
-          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{row.executionType}</div>
+          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+            {TYPE_LABELS[row.normalizedType] ?? row.executionType ?? '—'}
+          </div>
         </div>
       ),
     },
     {
-      key: 'status',
+      key: 'normalizedStatus',
       label: 'Status',
       width: '90px',
       render: (val) => <PassFailBadge status={val} />,
@@ -64,7 +73,7 @@ const ExecutionResultTable = ({ executions, loading }) => {
   ]
 
   return (
-    <Table columns={columns} data={executions} loading={loading} emptyMessage="No executions yet." />
+    <Table columns={columns} data={rows} loading={loading} emptyMessage={emptyMessage} />
   )
 }
 

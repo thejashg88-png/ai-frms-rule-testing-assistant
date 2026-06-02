@@ -1,5 +1,5 @@
 import React from 'react'
-import { Shield, ShieldCheck, TestTube2, TrendingUp } from 'lucide-react'
+import { Shield, ShieldCheck, Layers, TestTube2, TrendingUp } from 'lucide-react'
 import SummaryCard from './SummaryCard'
 import './dashboard.css'
 
@@ -20,6 +20,14 @@ const DashboardSummaryCards = ({ stats }) => {
       color: 'green',
       icon: ShieldCheck,
       trend: 3,
+    },
+    {
+      title: 'Total Scenarios',
+      value: stats.totalScenarios,
+      subtitle: 'Test scenario groups',
+      color: 'teal',
+      icon: Layers,
+      trend: 4,
     },
     {
       title: 'Test Cases',

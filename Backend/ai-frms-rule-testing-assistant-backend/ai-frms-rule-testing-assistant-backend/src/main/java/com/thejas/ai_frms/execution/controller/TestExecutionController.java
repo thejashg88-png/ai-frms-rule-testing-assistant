@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping(ApiPathConstants.EXECUTIONS)
@@ -31,9 +32,30 @@ public class TestExecutionController {
             @Valid @RequestBody ExecuteTestCaseRequest request
     ) {
         ExecuteTestResponse response = testExecutionService.executeTestCase(request);
-
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Test case executed successfully", response));
+    }
+
+    @PostMapping("/test-case/{testCaseId}")
+    public ResponseEntity<ApiResponse<ExecuteTestResponse>> executeTestCaseById(
+            @PathVariable Long testCaseId,
+            @RequestBody(required = false) Map<String, String> body
+    ) {
+        ExecuteTestCaseRequest request = new ExecuteTestCaseRequest();
+        request.setTestCaseId(testCaseId);
+        request.setExecutedBy(body != null ? body.get("executedBy") : null);
+        ExecuteTestResponse response = testExecutionService.executeTestCase(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Test case executed successfully", response));
+    }
+
+    /** Alias: POST /api/executions/run-testcase/{testCaseId} */
+    @PostMapping("/run-testcase/{testCaseId}")
+    public ResponseEntity<ApiResponse<ExecuteTestResponse>> runTestCaseById(
+            @PathVariable Long testCaseId,
+            @RequestBody(required = false) Map<String, String> body
+    ) {
+        return executeTestCaseById(testCaseId, body);
     }
 
     @PostMapping("/scenario")
@@ -41,9 +63,30 @@ public class TestExecutionController {
             @Valid @RequestBody ExecuteScenarioRequest request
     ) {
         ExecuteTestResponse response = testExecutionService.executeScenario(request);
-
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Scenario executed successfully", response));
+    }
+
+    @PostMapping("/scenario/{scenarioId}")
+    public ResponseEntity<ApiResponse<ExecuteTestResponse>> executeScenarioById(
+            @PathVariable Long scenarioId,
+            @RequestBody(required = false) Map<String, String> body
+    ) {
+        ExecuteScenarioRequest request = new ExecuteScenarioRequest();
+        request.setScenarioId(scenarioId);
+        request.setExecutedBy(body != null ? body.get("executedBy") : null);
+        ExecuteTestResponse response = testExecutionService.executeScenario(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Scenario executed successfully", response));
+    }
+
+    /** Alias: POST /api/executions/run-scenario/{scenarioId} */
+    @PostMapping("/run-scenario/{scenarioId}")
+    public ResponseEntity<ApiResponse<ExecuteTestResponse>> runScenarioById(
+            @PathVariable Long scenarioId,
+            @RequestBody(required = false) Map<String, String> body
+    ) {
+        return executeScenarioById(scenarioId, body);
     }
 
     @GetMapping("/{executionId}")
@@ -51,7 +94,6 @@ public class TestExecutionController {
             @PathVariable Long executionId
     ) {
         ExecuteTestResponse response = testExecutionService.getExecutionById(executionId);
-
         return ResponseEntity.ok(ApiResponse.success("Execution fetched successfully", response));
     }
 
@@ -60,7 +102,6 @@ public class TestExecutionController {
             @PathVariable Long executionId
     ) {
         List<ExecutionResultResponse> response = testExecutionService.getResultsByExecutionId(executionId);
-
         return ResponseEntity.ok(ApiResponse.success("Execution results fetched successfully", response));
     }
 
@@ -75,22 +116,14 @@ public class TestExecutionController {
             @RequestParam(defaultValue = "desc") String sortDirection
     ) {
         PageResponse<ExecuteTestResponse> response = testExecutionService.searchExecutions(
-                scenarioId,
-                testCaseId,
-                executionStatus,
-                page,
-                size,
-                sortBy,
-                sortDirection
+                scenarioId, testCaseId, executionStatus, page, size, sortBy, sortDirection
         );
-
         return ResponseEntity.ok(ApiResponse.success("Executions fetched successfully", response));
     }
 
     @DeleteMapping("/{executionId}")
     public ResponseEntity<ApiResponse<Void>> deleteExecution(@PathVariable Long executionId) {
         testExecutionService.deleteExecution(executionId);
-
         return ResponseEntity.ok(ApiResponse.success("Execution deleted successfully"));
     }
 }

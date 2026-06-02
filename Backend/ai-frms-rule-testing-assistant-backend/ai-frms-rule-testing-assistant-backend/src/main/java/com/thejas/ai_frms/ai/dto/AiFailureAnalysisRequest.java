@@ -16,97 +16,53 @@ public class AiFailureAnalysisRequest {
     private TestInputData inputData;
     private ExpectedResult expectedResult;
 
+    // Frontend sends "actualResult": "FAILED" directly
+    private String actualResult;
+    // Frontend sends "executionLogs": "..." directly
+    private String executionLogs;
+
+    // Legacy fields — kept for analyzeFailureById() compatibility
     private RuleAction actualAction;
     private String actualEvaluationStatus;
     private String actualRuleType;
-
     private String failureMessage;
 
-    public Long getExecutionId() {
-        return executionId;
-    }
+    public Long getExecutionId() { return executionId; }
+    public void setExecutionId(Long executionId) { this.executionId = executionId; }
 
-    public void setExecutionId(Long executionId) {
-        this.executionId = executionId;
-    }
+    public Long getTestCaseId() { return testCaseId; }
+    public void setTestCaseId(Long testCaseId) { this.testCaseId = testCaseId; }
 
-    public Long getTestCaseId() {
-        return testCaseId;
-    }
+    public String getTestCaseName() { return testCaseName; }
+    public void setTestCaseName(String testCaseName) { this.testCaseName = testCaseName; }
 
-    public void setTestCaseId(Long testCaseId) {
-        this.testCaseId = testCaseId;
-    }
+    public String getRuleName() { return ruleName; }
+    public void setRuleName(String ruleName) { this.ruleName = ruleName; }
 
-    public String getTestCaseName() {
-        return testCaseName;
-    }
+    public String getRuleType() { return ruleType; }
+    public void setRuleType(String ruleType) { this.ruleType = ruleType; }
 
-    public void setTestCaseName(String testCaseName) {
-        this.testCaseName = testCaseName;
-    }
+    public TestInputData getInputData() { return inputData; }
+    public void setInputData(TestInputData inputData) { this.inputData = inputData; }
 
-    public String getRuleName() {
-        return ruleName;
-    }
+    public ExpectedResult getExpectedResult() { return expectedResult; }
+    public void setExpectedResult(ExpectedResult expectedResult) { this.expectedResult = expectedResult; }
 
-    public void setRuleName(String ruleName) {
-        this.ruleName = ruleName;
-    }
+    public String getActualResult() { return actualResult; }
+    public void setActualResult(String actualResult) { this.actualResult = actualResult; }
 
-    public String getRuleType() {
-        return ruleType;
-    }
+    public String getExecutionLogs() { return executionLogs; }
+    public void setExecutionLogs(String executionLogs) { this.executionLogs = executionLogs; }
 
-    public void setRuleType(String ruleType) {
-        this.ruleType = ruleType;
-    }
+    public RuleAction getActualAction() { return actualAction; }
+    public void setActualAction(RuleAction actualAction) { this.actualAction = actualAction; }
 
-    public TestInputData getInputData() {
-        return inputData;
-    }
+    public String getActualEvaluationStatus() { return actualEvaluationStatus; }
+    public void setActualEvaluationStatus(String actualEvaluationStatus) { this.actualEvaluationStatus = actualEvaluationStatus; }
 
-    public void setInputData(TestInputData inputData) {
-        this.inputData = inputData;
-    }
+    public String getActualRuleType() { return actualRuleType; }
+    public void setActualRuleType(String actualRuleType) { this.actualRuleType = actualRuleType; }
 
-    public ExpectedResult getExpectedResult() {
-        return expectedResult;
-    }
-
-    public void setExpectedResult(ExpectedResult expectedResult) {
-        this.expectedResult = expectedResult;
-    }
-
-    public RuleAction getActualAction() {
-        return actualAction;
-    }
-
-    public void setActualAction(RuleAction actualAction) {
-        this.actualAction = actualAction;
-    }
-
-    public String getActualEvaluationStatus() {
-        return actualEvaluationStatus;
-    }
-
-    public void setActualEvaluationStatus(String actualEvaluationStatus) {
-        this.actualEvaluationStatus = actualEvaluationStatus;
-    }
-
-    public String getActualRuleType() {
-        return actualRuleType;
-    }
-
-    public void setActualRuleType(String actualRuleType) {
-        this.actualRuleType = actualRuleType;
-    }
-
-    public String getFailureMessage() {
-        return failureMessage;
-    }
-
-    public void setFailureMessage(String failureMessage) {
-        this.failureMessage = failureMessage;
-    }
+    public String getFailureMessage() { return failureMessage; }
+    public void setFailureMessage(String failureMessage) { this.failureMessage = failureMessage; }
 }

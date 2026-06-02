@@ -11,8 +11,9 @@ const ACTION_COLORS = {
   MONITOR: { bg: '#fef9c3', color: '#ca8a04' },
 }
 
-const TestCaseTable = ({ testCases, loading, onDelete, deletingId, confirmId, onConfirmDelete, onCancelDelete }) => {
+const TestCaseTable = ({ testCases = [], loading, onDelete, deletingId, confirmId, onConfirmDelete, onCancelDelete }) => {
   const navigate = useNavigate()
+  const rows = Array.isArray(testCases) ? testCases : []
 
   const columns = [
     {
@@ -75,7 +76,7 @@ const TestCaseTable = ({ testCases, loading, onDelete, deletingId, confirmId, on
   ]
 
   return (
-    <Table columns={columns} data={testCases} loading={loading} emptyMessage="No test cases found." />
+    <Table columns={columns} data={rows} loading={loading} emptyMessage="No test cases found." />
   )
 }
 

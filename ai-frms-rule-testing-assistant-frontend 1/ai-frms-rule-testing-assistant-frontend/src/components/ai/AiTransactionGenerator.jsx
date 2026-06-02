@@ -47,12 +47,12 @@ const AiTransactionGenerator = ({ onGenerated }) => {
       <Button variant="primary" onClick={generate} loading={loading}>Generate Transaction</Button>
 
       {result && (
-        <div style={{ marginTop: 16, padding: 16, background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8 }}>
-          <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: '#0369a1', textTransform: 'uppercase' }}>Generated Transaction</p>
+        <div style={{ marginTop: 16, padding: 16, background: 'var(--color-ai-response-bg)', border: '1px solid var(--color-ai-border)', borderRadius: 8 }}>
+          <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Generated Transaction</p>
           <pre style={{ margin: 0, fontSize: 12, whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>
             {JSON.stringify({ cardNumber: result.cardNumber, amount: result.amount, currency: result.currency, merchant: result.merchantName, type: result.transactionType, channel: result.channel, country: result.country }, null, 2)}
           </pre>
-          <p style={{ margin: '8px 0 0', fontSize: 12, color: '#0369a1' }}>{result.explanation}</p>
+          <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>{result.explanation}</p>
         </div>
       )}
     </div>
