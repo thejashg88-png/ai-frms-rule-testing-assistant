@@ -17,6 +17,7 @@ import com.thejas.ai_frms.ai.service.AiAssistantService;
 import com.thejas.ai_frms.common.constants.ApiPathConstants;
 import com.thejas.ai_frms.common.dto.ApiResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
@@ -25,22 +26,10 @@ import java.util.Map;
 /**
  * REST controller for AI assistant features.
  *
- * This controller does NOT implement any AI logic itself — it delegates all AI tasks
- * to the FastAPI Python service via AiAssistantService → AiServiceWebClient (HTTP POST).
- *
- * Available AI operations:
- *   generate-test-cases   — generates test cases for a rule or scenario
- *   analyze-failure       — explains why a test case failed
- *   explain-rule          — produces a business/technical explanation for a rule
- *   generate-transaction  — produces a sample transaction for a given rule context
- *   generate-rule         — suggests a rule definition from a plain-language requirement
- *   chat                  — free-form FRMS assistant chat
- *   health                — checks whether the FastAPI AI service is reachable
- *
- * If the FastAPI service is unavailable, endpoints return success:false with a clear message.
- * They never throw a 500 — unavailability is expected in development environments.
- *
- * Frontend-friendly aliases are provided for path variations the UI may send.
+ * Role access:
+ *   ADMIN  — all AI endpoints
+ *   TESTER — all AI endpoints
+ *   VIEWER — no AI access (403 on all POST endpoints; GET /health is public)
  */
 @RestController
 @RequestMapping(ApiPathConstants.AI_ASSISTANT)
@@ -52,20 +41,19 @@ public class AiAssistantController {
         this.aiAssistantService = aiAssistantService;
     }
 
-    // ── Health ───────────────────────────────────────────────────────────────
+    // ── Health (public — permitted in SecurityConfig) ─────────────────────────
 
     @GetMapping("/health")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getAiServiceHealth() {
         Map<String, Object> health = aiAssistantService.getHealth();
         boolean isUp = "UP".equals(health.get("aiServiceStatus"));
         return ResponseEntity.ok(ApiResponse.success(
-                isUp ? "AI service is healthy" : "AI service is currently unavailable",
-                health
-        ));
+                isUp ? "AI service is healthy" : "AI service is currently unavailable", health));
     }
 
-    // ── Primary endpoints ────────────────────────────────────────────────────
+    // ── Primary endpoints ─────────────────────────────────────────────────────
 
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/generate-test-cases")
     public ResponseEntity<ApiResponse<AiTestCaseGenerationResponse>> generateTestCases(
             @RequestBody AiTestCaseGenerationRequest request
@@ -86,6 +74,7 @@ public class AiAssistantController {
         }
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/analyze-failure")
     public ResponseEntity<ApiResponse<AiFailureAnalysisResponse>> analyzeFailure(
             @RequestBody AiFailureAnalysisRequest request
@@ -106,6 +95,7 @@ public class AiAssistantController {
         }
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/explain-rule")
     public ResponseEntity<ApiResponse<AiRuleExplanationResponse>> explainRule(
             @RequestBody AiRuleExplanationRequest request
@@ -142,6 +132,7 @@ public class AiAssistantController {
         }
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/generate-transaction")
     public ResponseEntity<ApiResponse<AiGenerateTransactionResponse>> generateTransaction(
             @RequestBody(required = false) AiGenerateTransactionRequest request
@@ -150,6 +141,7 @@ public class AiAssistantController {
         return ResponseEntity.ok(ApiResponse.success("AI generated transaction successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/chat")
     public ResponseEntity<ApiResponse<AiChatResponse>> chat(
             @RequestBody AiChatRequest request
@@ -158,15 +150,9 @@ public class AiAssistantController {
         return ResponseEntity.ok(ApiResponse.success("AI chat response returned", response));
     }
 
-    // ── Frontend-friendly aliases ────────────────────────────────────────────
+    // ── Generate Rule ─────────────────────────────────────────────────────────
 
-    // ── Generate Rule ────────────────────────────────────────────────────────
-
-    /**
-     * POST /api/ai/generate-rule
-     * Generates an AI-suggested rule based on a plain-language requirement.
-     * Never saves to the database — user reviews and calls POST /api/rules to persist.
-     */
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/generate-rule")
     public ResponseEntity<ApiResponse<AiGenerateRuleResponse>> generateRule(
             @RequestBody AiGenerateRuleRequest request
@@ -179,15 +165,17 @@ public class AiAssistantController {
         }
     }
 
-    /** Alias: /api/ai/generate-testcases → generate-test-cases */
+    // ── Frontend-friendly aliases ─────────────────────────────────────────────
+
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/generate-testcases")
     public ResponseEntity<ApiResponse<AiTestCaseGenerationResponse>> generateTestCasesAlias(
             @RequestBody AiTestCaseGenerationRequest request
     ) {
-        return generateTestCases(request);  // already has try-catch
+        return generateTestCases(request);
     }
 
-    /** Alias: /api/ai/failure-analysis → analyze-failure */
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/failure-analysis")
     public ResponseEntity<ApiResponse<AiFailureAnalysisResponse>> analyzeFailureAlias(
             @RequestBody AiFailureAnalysisRequest request
@@ -195,7 +183,7 @@ public class AiAssistantController {
         return analyzeFailure(request);
     }
 
-    /** Alias: /api/ai/rule-explanation → explain-rule */
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/rule-explanation")
     public ResponseEntity<ApiResponse<AiRuleExplanationResponse>> explainRuleAlias(
             @RequestBody AiRuleExplanationRequest request
@@ -203,7 +191,7 @@ public class AiAssistantController {
         return explainRule(request);
     }
 
-    /** Alias: /api/ai/transaction-generator → generate-transaction */
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/transaction-generator")
     public ResponseEntity<ApiResponse<AiGenerateTransactionResponse>> generateTransactionAlias(
             @RequestBody(required = false) AiGenerateTransactionRequest request

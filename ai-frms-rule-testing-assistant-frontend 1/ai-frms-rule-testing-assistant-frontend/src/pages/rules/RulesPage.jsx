@@ -10,6 +10,7 @@ import Table from '../../components/common/Table'
 import ErrorMessage from '../../components/common/ErrorMessage'
 import Pagination from '../../components/common/Pagination'
 import { useToast } from '../../hooks/useToast'
+import { useAuth } from '../../hooks/useAuth'
 import useClientPagination from '../../hooks/useClientPagination'
 import ruleService from '../../services/ruleService'
 import { STATUSES } from '../../data/statuses'
@@ -30,6 +31,7 @@ const STATUS_FILTER_OPTIONS = [
 const RulesPage = () => {
   const navigate = useNavigate()
   const { addToast } = useToast()
+  const { isAdmin } = useAuth()
 
   // All records loaded once from backend
   const [allRules, setAllRules] = useState([])
@@ -162,7 +164,7 @@ const RulesPage = () => {
       label: 'Actions',
       width: '170px',
       render: (id) => {
-        if (confirmId === id) {
+        if (isAdmin && confirmId === id) {
           return (
             <div style={{ display: 'flex', gap: 6 }}>
               <Button variant="danger" size="sm" loading={deleting === id} onClick={() => handleDelete(id)}>Confirm</Button>
@@ -172,8 +174,8 @@ const RulesPage = () => {
         }
         return (
           <div style={{ display: 'flex', gap: 6 }}>
-            <Button variant="outline" size="sm" onClick={() => navigate(`/rules/${id}/edit`)}>Edit</Button>
-            <Button variant="ghost"   size="sm" onClick={() => setConfirmId(id)}>Delete</Button>
+            {isAdmin && <Button variant="outline" size="sm" onClick={() => navigate(`/rules/${id}/edit`)}>Edit</Button>}
+            {isAdmin && <Button variant="ghost"   size="sm" onClick={() => setConfirmId(id)}>Delete</Button>}
           </div>
         )
       },
@@ -185,11 +187,11 @@ const RulesPage = () => {
       <PageHeader
         title="Rules"
         subtitle={subtitleText}
-        actions={
+        actions={isAdmin && (
           <Button variant="primary" onClick={() => navigate('/rules/create')}>
             + Create Rule
           </Button>
-        }
+        )}
       />
 
       {/* ── Filters ── */}

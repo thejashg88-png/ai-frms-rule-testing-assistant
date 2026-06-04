@@ -1,9 +1,12 @@
 package com.thejas.ai_frms.rule.service;
 
+import com.thejas.ai_frms.audit.service.AuditLogService;
 import com.thejas.ai_frms.common.dto.PageResponse;
 import com.thejas.ai_frms.common.enums.RuleStatus;
 import com.thejas.ai_frms.common.exception.BadRequestException;
 import com.thejas.ai_frms.common.exception.ResourceNotFoundException;
+import com.thejas.ai_frms.execution.repository.TestExecutionRepository;
+import com.thejas.ai_frms.execution.repository.TestExecutionResultRepository;
 import com.thejas.ai_frms.rule.dto.RuleCreateRequest;
 import com.thejas.ai_frms.rule.dto.RuleResponse;
 import com.thejas.ai_frms.rule.dto.RuleSearchRequest;
@@ -11,7 +14,12 @@ import com.thejas.ai_frms.rule.dto.RuleUpdateRequest;
 import com.thejas.ai_frms.rule.entity.RuleEntity;
 import com.thejas.ai_frms.rule.mapper.RuleMapper;
 import com.thejas.ai_frms.rule.repository.RuleRepository;
+import com.thejas.ai_frms.scenario.entity.TestScenarioEntity;
+import com.thejas.ai_frms.scenario.repository.TestScenarioRepository;
+import com.thejas.ai_frms.testcase.repository.TestCaseRepository;
 import jakarta.persistence.criteria.Predicate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +29,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Service implementation for fraud rule lifecycle management.
@@ -35,10 +45,28 @@ import java.util.List;
 @Service
 public class RuleServiceImpl implements RuleService {
 
-    private final RuleRepository ruleRepository;
+    private static final Logger log = LoggerFactory.getLogger(RuleServiceImpl.class);
+    private static final String ENTITY_TYPE = "RULE";
 
-    public RuleServiceImpl(RuleRepository ruleRepository) {
+    private final RuleRepository ruleRepository;
+    private final TestScenarioRepository scenarioRepository;
+    private final TestCaseRepository testCaseRepository;
+    private final TestExecutionRepository executionRepository;
+    private final TestExecutionResultRepository executionResultRepository;
+    private final AuditLogService auditLogService;
+
+    public RuleServiceImpl(RuleRepository ruleRepository,
+                           TestScenarioRepository scenarioRepository,
+                           TestCaseRepository testCaseRepository,
+                           TestExecutionRepository executionRepository,
+                           TestExecutionResultRepository executionResultRepository,
+                           AuditLogService auditLogService) {
         this.ruleRepository = ruleRepository;
+        this.scenarioRepository = scenarioRepository;
+        this.testCaseRepository = testCaseRepository;
+        this.executionRepository = executionRepository;
+        this.executionResultRepository = executionResultRepository;
+        this.auditLogService = auditLogService;
     }
 
     @Override
@@ -53,6 +81,14 @@ public class RuleServiceImpl implements RuleService {
         RuleEntity entity = RuleMapper.toEntity(request);
         RuleEntity savedEntity = ruleRepository.save(entity);
 
+        auditLogService.logCreate(
+                request.getCreatedBy(),
+                ENTITY_TYPE,
+                savedEntity.getRuleId(),
+                savedEntity.getRuleName(),
+                savedEntity
+        );
+
         return RuleMapper.toResponse(savedEntity);
     }
 
@@ -66,8 +102,20 @@ public class RuleServiceImpl implements RuleService {
             throw new BadRequestException("Rule name already exists: " + request.getRuleName());
         }
 
+        // Capture old state for audit before applying changes
+        RuleResponse oldState = RuleMapper.toResponse(entity);
+
         RuleMapper.updateEntity(entity, request);
         RuleEntity updatedEntity = ruleRepository.save(entity);
+
+        auditLogService.logUpdate(
+                request.getModifiedBy(),
+                ENTITY_TYPE,
+                ruleId,
+                updatedEntity.getRuleName(),
+                oldState,
+                RuleMapper.toResponse(updatedEntity)
+        );
 
         return RuleMapper.toResponse(updatedEntity);
     }
@@ -84,9 +132,12 @@ public class RuleServiceImpl implements RuleService {
     public PageResponse<RuleResponse> searchRules(RuleSearchRequest request) {
         Pageable pageable = buildPageable(request);
 
-        Page<RuleResponse> responsePage = ruleRepository
-                .findAll(buildSpecification(request), pageable)
-                .map(RuleMapper::toResponse);
+        Page<RuleEntity> page = ruleRepository.findAll(buildSpecification(request), pageable);
+        long totalFetched = page.getTotalElements();
+        Page<RuleResponse> responsePage = page.map(RuleMapper::toResponse);
+
+        log.info("[RULE LIST] totalFetched={} returned={} excludedDeleted=ALWAYS",
+                totalFetched, responsePage.getNumberOfElements());
 
         return PageResponse.fromPage(responsePage);
     }
@@ -99,18 +150,97 @@ public class RuleServiceImpl implements RuleService {
     @Override
     @Transactional
     public RuleResponse changeRuleStatus(Long ruleId, RuleStatus status) {
+        if (status == RuleStatus.DELETED) {
+            throw new BadRequestException("Use the DELETE endpoint to remove a rule. Status DELETED cannot be set directly.");
+        }
+
         RuleEntity entity = getRuleEntity(ruleId);
         entity.setStatus(status);
 
         RuleEntity updatedEntity = ruleRepository.save(entity);
+
+        String action = status == RuleStatus.INACTIVE ? "INACTIVATE" : "ACTIVATE";
+        auditLogService.logEvent(
+                null,
+                action,
+                ENTITY_TYPE,
+                ruleId,
+                entity.getRuleName(),
+                String.format("User changed %s rule '%s' status to %s", ENTITY_TYPE, entity.getRuleName(), status)
+        );
+
         return RuleMapper.toResponse(updatedEntity);
     }
 
     @Override
     @Transactional
-    public void deleteRule(Long ruleId) {
+    public String deleteRule(Long ruleId) {
         RuleEntity entity = getRuleEntity(ruleId);
-        ruleRepository.delete(entity);
+        String ruleName = entity.getRuleName();
+
+        log.info("[RULE DELETE] ruleId={}", ruleId);
+
+        // Find all scenarios linked to this rule
+        List<TestScenarioEntity> allScenarios = scenarioRepository.findByRuleRuleId(ruleId);
+        List<Long> scenarioIds = allScenarios.stream().map(TestScenarioEntity::getScenarioId).toList();
+        log.info("[RULE DELETE] scenarioIds={}", scenarioIds);
+
+        // Find test case IDs for all linked scenarios
+        List<Long> testCaseIds = scenarioIds.isEmpty()
+                ? List.of()
+                : testCaseRepository.findByScenarioScenarioIdIn(scenarioIds)
+                        .stream().map(tc -> tc.getTestCaseId()).toList();
+        log.info("[RULE DELETE] testCaseIds={}", testCaseIds);
+
+        // Find execution IDs (by scenario + by test cases, deduplicated)
+        Set<Long> executionIdSet = new HashSet<>();
+        for (Long sid : scenarioIds) {
+            executionIdSet.addAll(executionRepository.findExecutionIdsByScenarioId(sid));
+        }
+        if (!testCaseIds.isEmpty()) {
+            executionIdSet.addAll(executionRepository.findExecutionIdsByTestCaseIdIn(testCaseIds));
+        }
+        List<Long> executionIds = new ArrayList<>(executionIdSet);
+        log.info("[RULE DELETE] executionIds={}", executionIds);
+
+        // Step 1: Delete execution results
+        if (!executionIds.isEmpty()) {
+            executionResultRepository.deleteByExecutionExecutionIdIn(executionIds);
+        }
+        log.info("[RULE DELETE] executionResultsDeleted=batch for {} executionIds", executionIds.size());
+
+        // Step 2: Delete executions
+        if (!executionIds.isEmpty()) {
+            executionRepository.deleteByExecutionIdIn(executionIds);
+        }
+        log.info("[RULE DELETE] executionsDeleted={}", executionIds.size());
+
+        // Step 3: Delete test cases
+        if (!testCaseIds.isEmpty()) {
+            testCaseRepository.deleteByTestCaseIdIn(testCaseIds);
+        }
+        log.info("[RULE DELETE] testCasesDeleted={}", testCaseIds.size());
+
+        // Step 4: Delete scenarios
+        if (!scenarioIds.isEmpty()) {
+            scenarioRepository.deleteByScenarioIdIn(scenarioIds);
+        }
+        log.info("[RULE DELETE] scenariosDeleted={}", scenarioIds.size());
+
+        // Step 5: Delete rule — audit snapshot before deletion
+        RuleResponse snapshot = RuleMapper.toResponse(entity);
+        ruleRepository.deleteById(ruleId);
+
+        // Step 6: Verify deletion
+        boolean stillExists = ruleRepository.existsById(ruleId);
+        log.info("[RULE DELETE VERIFY] existsAfterDelete={}", stillExists);
+        if (stillExists) {
+            throw new IllegalStateException("Rule delete failed — record still exists after delete. ruleId=" + ruleId);
+        }
+
+        log.info("[RULE DELETE] ruleDeleted=true");
+        auditLogService.logDelete(null, "DELETE", ENTITY_TYPE, ruleId, ruleName, snapshot);
+        return "Rule deleted successfully.";
     }
 
     private RuleEntity getRuleEntity(Long ruleId) {
@@ -147,6 +277,9 @@ public class RuleServiceImpl implements RuleService {
     private Specification<RuleEntity> buildSpecification(RuleSearchRequest request) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
+
+            // Always exclude DELETED rules — they are soft-deleted and must never appear in any list
+            predicates.add(criteriaBuilder.notEqual(root.get("status"), RuleStatus.DELETED));
 
             if (request.getRuleName() != null && !request.getRuleName().isBlank()) {
                 predicates.add(criteriaBuilder.like(

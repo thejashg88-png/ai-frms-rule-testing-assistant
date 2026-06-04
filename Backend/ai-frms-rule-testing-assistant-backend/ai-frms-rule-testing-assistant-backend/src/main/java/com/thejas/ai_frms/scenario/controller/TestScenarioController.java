@@ -11,19 +11,16 @@ import com.thejas.ai_frms.scenario.service.TestScenarioService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
  * REST controller for managing test scenarios.
  *
- * A scenario groups related test cases under a single fraud rule.
- * Relationship: Rule → Scenario → TestCases
- *
- * Key behavior:
- *   - Each scenario must be linked to exactly one rule (via ruleId or ruleType).
- *   - Scenario execution runs all ACTIVE test cases belonging to the scenario.
- *   - INACTIVE scenarios are excluded from execution but remain in the database.
- *   - Accepts both /api/test-scenarios and /api/scenarios as base paths.
+ * Role access:
+ *   ADMIN  — full CRUD + status changes
+ *   TESTER — read-only
+ *   VIEWER — read-only
  */
 @RestController
 @RequestMapping({ApiPathConstants.SCENARIOS, "/api/scenarios"})
@@ -35,23 +32,23 @@ public class TestScenarioController {
         this.testScenarioService = testScenarioService;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<TestScenarioResponse>> createScenario(
             @Valid @RequestBody TestScenarioCreateRequest request
     ) {
         TestScenarioResponse response = testScenarioService.createScenario(request);
-
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Scenario created successfully", response));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{scenarioId}")
     public ResponseEntity<ApiResponse<TestScenarioResponse>> updateScenario(
             @PathVariable Long scenarioId,
             @Valid @RequestBody TestScenarioUpdateRequest request
     ) {
         TestScenarioResponse response = testScenarioService.updateScenario(scenarioId, request);
-
         return ResponseEntity.ok(ApiResponse.success("Scenario updated successfully", response));
     }
 
@@ -60,7 +57,6 @@ public class TestScenarioController {
             @PathVariable Long scenarioId
     ) {
         TestScenarioResponse response = testScenarioService.getScenarioById(scenarioId);
-
         return ResponseEntity.ok(ApiResponse.success("Scenario fetched successfully", response));
     }
 
@@ -75,32 +71,24 @@ public class TestScenarioController {
             @RequestParam(defaultValue = "desc") String sortDirection
     ) {
         PageResponse<TestScenarioResponse> response = testScenarioService.searchScenarios(
-                ruleId,
-                scenarioName,
-                status,
-                page,
-                size,
-                sortBy,
-                sortDirection
-        );
-
+                ruleId, scenarioName, status, page, size, sortBy, sortDirection);
         return ResponseEntity.ok(ApiResponse.success("Scenarios fetched successfully", response));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{scenarioId}/status")
     public ResponseEntity<ApiResponse<TestScenarioResponse>> changeScenarioStatus(
             @PathVariable Long scenarioId,
             @RequestParam RuleStatus status
     ) {
         TestScenarioResponse response = testScenarioService.changeScenarioStatus(scenarioId, status);
-
         return ResponseEntity.ok(ApiResponse.success("Scenario status changed successfully", response));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{scenarioId}")
     public ResponseEntity<ApiResponse<Void>> deleteScenario(@PathVariable Long scenarioId) {
-        testScenarioService.deleteScenario(scenarioId);
-
-        return ResponseEntity.ok(ApiResponse.success("Scenario deleted successfully"));
+        String message = testScenarioService.deleteScenario(scenarioId);
+        return ResponseEntity.ok(ApiResponse.success(message));
     }
 }

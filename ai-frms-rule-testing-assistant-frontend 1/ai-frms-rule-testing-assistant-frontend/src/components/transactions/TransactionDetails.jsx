@@ -2,6 +2,7 @@ import React from 'react'
 import Badge from '../common/Badge'
 import { maskCardNumber } from '../../utils/maskUtils'
 import { formatAmount } from '../../utils/amountUtils'
+import RuleExplanationPanel, { getRuleExplanation } from '../common/RuleExplanationPanel'
 
 const PAYMENT_STATUS_COLORS = {
   APPROVED: { bg: '#dcfce7', color: '#16a34a' },
@@ -81,6 +82,7 @@ const TransactionDetails = ({ transaction }) => {
       {!transaction.triggeredRuleName && !transaction.riskReason && (
         <Row label="Notes" value="No rule triggered for this transaction." />
       )}
+      <RuleExplanationPanel explanation={getRuleExplanation(transaction)} />
     </div>
   )
 }

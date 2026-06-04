@@ -19,5 +19,5 @@ public interface RuleService {
 
     RuleResponse changeRuleStatus(Long ruleId, RuleStatus status);
 
-    void deleteRule(Long ruleId);
+    String deleteRule(Long ruleId);
 }

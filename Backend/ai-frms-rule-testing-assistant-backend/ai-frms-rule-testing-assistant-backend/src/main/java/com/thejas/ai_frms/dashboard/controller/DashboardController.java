@@ -25,7 +25,8 @@ import java.util.List;
  */
 @RestController
 @RequestMapping(ApiPathConstants.DASHBOARD)
-public class DashboardController {
+public class
+DashboardController {
 
     private final DashboardService dashboardService;
 

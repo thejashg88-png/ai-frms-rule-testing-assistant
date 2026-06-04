@@ -18,6 +18,8 @@ public final class AuditLogMapper {
         entity.setEntityId(request.getEntityId());
         entity.setDescription(request.getDescription());
         entity.setPerformedBy(request.getPerformedBy());
+        entity.setOldValue(request.getOldValue());
+        entity.setNewValue(request.getNewValue());
         entity.setIpAddress(request.getIpAddress());
         entity.setUserAgent(request.getUserAgent());
 
@@ -28,12 +30,16 @@ public final class AuditLogMapper {
         AuditLogResponse response = new AuditLogResponse();
 
         response.setAuditId(entity.getAuditId());
-        response.setModuleName(entity.getModuleName());
+        // performedBy in DB → actor in response; fall back to "SYSTEM" for old null records
+        response.setActor(entity.getPerformedBy() != null ? entity.getPerformedBy() : "SYSTEM");
+        // moduleName in DB → entityType in response; fall back to "N/A" for old null records
+        response.setEntityType(entity.getModuleName() != null ? entity.getModuleName() : "N/A");
         response.setAction(entity.getAction());
         response.setEntityName(entity.getEntityName());
         response.setEntityId(entity.getEntityId());
         response.setDescription(entity.getDescription());
-        response.setPerformedBy(entity.getPerformedBy());
+        response.setOldValue(entity.getOldValue());
+        response.setNewValue(entity.getNewValue());
         response.setIpAddress(entity.getIpAddress());
         response.setUserAgent(entity.getUserAgent());
         response.setCreatedAt(entity.getCreatedAt());

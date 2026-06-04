@@ -13,20 +13,16 @@ import com.thejas.ai_frms.testcase.service.TestCaseService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
  * REST controller for managing test cases.
  *
- * A test case defines a specific input (transaction data) and the expected rule engine output.
- * It must be linked to a scenario, which in turn is linked to a rule.
- *
- * Key behavior:
- *   - inputData can be supplied as a nested object OR as flat top-level fields; service merges them.
- *   - expectedResult must be a structured object with at minimum an expectedAction field.
- *   - INACTIVE test cases are excluded from scenario execution but stay in the database.
- *   - Delete is soft (sets status=INACTIVE) if execution history exists; hard delete otherwise.
- *   - Accepts both /api/test-cases and /api/testcases as base paths.
+ * Role access:
+ *   ADMIN  — full CRUD + status changes
+ *   TESTER — create, update, status change (no delete)
+ *   VIEWER — read-only
  */
 @RestController
 @RequestMapping({ApiPathConstants.TEST_CASES, "/api/testcases"})
@@ -38,23 +34,23 @@ public class TestCaseController {
         this.testCaseService = testCaseService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping
     public ResponseEntity<ApiResponse<TestCaseResponse>> createTestCase(
             @Valid @RequestBody TestCaseCreateRequest request
     ) {
         TestCaseResponse response = testCaseService.createTestCase(request);
-
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Test case created successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PutMapping("/{testCaseId}")
     public ResponseEntity<ApiResponse<TestCaseResponse>> updateTestCase(
             @PathVariable Long testCaseId,
             @Valid @RequestBody TestCaseUpdateRequest request
     ) {
         TestCaseResponse response = testCaseService.updateTestCase(testCaseId, request);
-
         return ResponseEntity.ok(ApiResponse.success("Test case updated successfully", response));
     }
 
@@ -63,7 +59,6 @@ public class TestCaseController {
             @PathVariable Long testCaseId
     ) {
         TestCaseResponse response = testCaseService.getTestCaseById(testCaseId);
-
         return ResponseEntity.ok(ApiResponse.success("Test case fetched successfully", response));
     }
 
@@ -80,30 +75,21 @@ public class TestCaseController {
             @RequestParam(defaultValue = "desc") String sortDirection
     ) {
         PageResponse<TestCaseResponse> response = testCaseService.searchTestCases(
-                scenarioId,
-                testCaseName,
-                testCaseType,
-                status,
-                generatedBy,
-                page,
-                size,
-                sortBy,
-                sortDirection
-        );
-
+                scenarioId, testCaseName, testCaseType, status, generatedBy, page, size, sortBy, sortDirection);
         return ResponseEntity.ok(ApiResponse.success("Test cases fetched successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PatchMapping("/{testCaseId}/status")
     public ResponseEntity<ApiResponse<TestCaseResponse>> changeTestCaseStatus(
             @PathVariable Long testCaseId,
             @RequestParam RuleStatus status
     ) {
         TestCaseResponse response = testCaseService.changeTestCaseStatus(testCaseId, status);
-
         return ResponseEntity.ok(ApiResponse.success("Test case status changed successfully", response));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{testCaseId}")
     public ResponseEntity<ApiResponse<Void>> deleteTestCase(@PathVariable Long testCaseId) {
         String message = testCaseService.deleteTestCase(testCaseId);

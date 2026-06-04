@@ -2,13 +2,20 @@ import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { MENU_ITEMS, MENU_SECTIONS } from '../../data/menuItems'
+import { useAuth } from '../../hooks/useAuth'
 import './layout.css'
 
 const Sidebar = () => {
   const location = useLocation()
   const [isExpanded, setIsExpanded] = useState(true)
+  const { role } = useAuth()
 
   const isActive = (path) => location.pathname === path
+
+  // Hide items whose requiredRoles don't include the current role
+  const visibleItems = MENU_ITEMS.filter((item) =>
+    !item.requiredRoles || item.requiredRoles.includes(role)
+  )
 
   return (
     <aside className={`sidebar ${isExpanded ? 'expanded' : 'collapsed'}`}>
@@ -25,7 +32,7 @@ const Sidebar = () => {
 
       <nav className="sidebar-nav">
         {Object.entries(MENU_SECTIONS).map(([key, label]) => {
-          const items = MENU_ITEMS.filter((item) => item.section === key)
+          const items = visibleItems.filter((item) => item.section === key)
           if (items.length === 0) return null
 
           return (

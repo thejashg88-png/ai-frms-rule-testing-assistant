@@ -1,5 +1,6 @@
 package com.thejas.ai_frms.transaction.service;
 
+import com.thejas.ai_frms.audit.service.AuditLogService;
 import com.thejas.ai_frms.common.dto.PageResponse;
 import com.thejas.ai_frms.common.enums.RuleStatus;
 import com.thejas.ai_frms.common.exception.ResourceNotFoundException;
@@ -47,15 +48,18 @@ public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
     private final RuleRepository ruleRepository;
     private final TransactionRuleEvaluationService ruleEvaluationService;
+    private final AuditLogService auditLogService;
 
     public TransactionServiceImpl(
             TransactionRepository transactionRepository,
             RuleRepository ruleRepository,
-            TransactionRuleEvaluationService ruleEvaluationService
+            TransactionRuleEvaluationService ruleEvaluationService,
+            AuditLogService auditLogService
     ) {
         this.transactionRepository = transactionRepository;
         this.ruleRepository = ruleRepository;
         this.ruleEvaluationService = ruleEvaluationService;
+        this.auditLogService = auditLogService;
     }
 
     @Override
@@ -63,6 +67,23 @@ public class TransactionServiceImpl implements TransactionService {
     public TransactionResponse createTransaction(TransactionCreateRequest request) {
         TransactionEntity entity = TransactionMapper.toEntity(request);
         TransactionEntity savedEntity = transactionRepository.save(entity);
+
+        String description = String.format(
+                "User %s created transaction RRN=%s, amount=%s.",
+                resolveActor(request.getCreatedBy()),
+                savedEntity.getRrn(),
+                savedEntity.getAmount()
+        );
+
+        auditLogService.logEvent(
+                request.getCreatedBy(),
+                "CREATE",
+                "TRANSACTION",
+                savedEntity.getTransactionId(),
+                savedEntity.getRrn() != null ? savedEntity.getRrn() : savedEntity.getSerialNumber(),
+                description
+        );
+
         return TransactionMapper.toResponse(savedEntity);
     }
 
@@ -75,6 +96,16 @@ public class TransactionServiceImpl implements TransactionService {
                 .toList();
 
         List<TransactionEntity> savedEntities = transactionRepository.saveAll(entities);
+
+        // Audit bulk create as a single event
+        auditLogService.logEvent(
+                null,
+                "CREATE",
+                "TRANSACTION",
+                null,
+                "BULK",
+                String.format("Bulk created %d transactions", savedEntities.size())
+        );
 
         return savedEntities.stream()
                 .map(TransactionMapper::toResponse)
@@ -124,6 +155,11 @@ public class TransactionServiceImpl implements TransactionService {
         response.setTriggeredRuleType(result.getTriggeredRuleType());
         response.setTriggeredAction(result.getTriggeredAction());
         response.setRiskReason(result.getRiskReason());
+        response.setRuleExplanation(result.getRuleExplanation());
+    }
+
+    private String resolveActor(String actor) {
+        return (actor != null && !actor.isBlank()) ? actor : "SYSTEM";
     }
 
     private TransactionEntity getTransactionEntity(Long transactionId) {

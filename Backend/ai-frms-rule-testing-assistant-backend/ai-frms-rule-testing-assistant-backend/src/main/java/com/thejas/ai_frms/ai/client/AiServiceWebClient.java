@@ -82,9 +82,11 @@ public class AiServiceWebClient implements AiServiceClient {
     @Override
     public String analyzeFailure(FastApiAnalyzeFailureRequest request) {
         log.info("[AI CLIENT] Calling FastAPI analyze-failure: {}{}", baseUrl, analyzeFailurePath);
-        log.info("[AI CLIENT] Failure analysis request payload: testCaseName={}, ruleType={}, expectedResult={}, actualResult={}, executionLogs={}",
-                request.getTestCaseName(), request.getRuleType(), request.getExpectedResult(),
-                request.getActualResult(), request.getExecutionLogs());
+        log.info("[AI CLIENT] Failure analysis payload: executionId={}, ruleType={}, expectedResult={}, actualResult={}, matchedCount={}, requiredCount={}, historicalCount={}, hasRuleConfig={}, hasTrace={}",
+                request.getExecutionId(), request.getRuleType(), request.getExpectedResult(),
+                request.getActualResult(), request.getMatchedCount(), request.getRequiredCount(),
+                request.getHistoricalTransactionCount(),
+                request.getRuleConfig() != null, request.getExecutionTrace() != null);
         try {
             String response = callAiServicePost(analyzeFailurePath, request, "AI failure analysis failed");
             log.info("[AI CLIENT] Failure analysis FastAPI response: {}", response);

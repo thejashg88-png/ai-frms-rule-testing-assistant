@@ -5,12 +5,15 @@ import java.time.LocalDateTime;
 public class AuditLogResponse {
 
     private Long auditId;
-    private String moduleName;
+    // actor and entityType are the canonical frontend-facing names
+    private String actor;
+    private String entityType;
     private String action;
     private String entityName;
     private Long entityId;
     private String description;
-    private String performedBy;
+    private String oldValue;
+    private String newValue;
     private String ipAddress;
     private String userAgent;
     private LocalDateTime createdAt;
@@ -23,12 +26,20 @@ public class AuditLogResponse {
         this.auditId = auditId;
     }
 
-    public String getModuleName() {
-        return moduleName;
+    public String getActor() {
+        return actor;
     }
 
-    public void setModuleName(String moduleName) {
-        this.moduleName = moduleName;
+    public void setActor(String actor) {
+        this.actor = actor;
+    }
+
+    public String getEntityType() {
+        return entityType;
+    }
+
+    public void setEntityType(String entityType) {
+        this.entityType = entityType;
     }
 
     public String getAction() {
@@ -63,12 +74,20 @@ public class AuditLogResponse {
         this.description = description;
     }
 
-    public String getPerformedBy() {
-        return performedBy;
+    public String getOldValue() {
+        return oldValue;
     }
 
-    public void setPerformedBy(String performedBy) {
-        this.performedBy = performedBy;
+    public void setOldValue(String oldValue) {
+        this.oldValue = oldValue;
+    }
+
+    public String getNewValue() {
+        return newValue;
+    }
+
+    public void setNewValue(String newValue) {
+        this.newValue = newValue;
     }
 
     public String getIpAddress() {

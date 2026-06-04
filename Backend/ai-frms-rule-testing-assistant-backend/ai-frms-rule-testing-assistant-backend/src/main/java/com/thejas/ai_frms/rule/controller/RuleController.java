@@ -12,6 +12,7 @@ import com.thejas.ai_frms.rule.service.RuleService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -20,11 +21,10 @@ import org.springframework.web.bind.annotation.*;
  * Rules are the core configuration of the FRMS system. Each rule has a type, action,
  * and type-specific thresholds (maxAmount, txnCount, frequencyHours, etc.).
  *
- * Key behavior:
- *   - Only ACTIVE rules are evaluated during transaction risk assessment and test case execution.
- *   - PATCH /{ruleId}/status can set a rule to INACTIVE to disable it without deleting it.
- *   - Rule names must be unique (case-insensitive).
- *   - Deleting a rule that has linked scenarios or test cases will fail with a 400 (FK constraint).
+ * Role access:
+ *   ADMIN  — full CRUD + status changes
+ *   TESTER — read-only
+ *   VIEWER — read-only
  */
 @RestController
 @RequestMapping(ApiPathConstants.RULES)
@@ -36,28 +36,27 @@ public class RuleController {
         this.ruleService = ruleService;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<RuleResponse>> createRule(@Valid @RequestBody RuleCreateRequest request) {
         RuleResponse response = ruleService.createRule(request);
-
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Rule created successfully", response));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{ruleId}")
     public ResponseEntity<ApiResponse<RuleResponse>> updateRule(
             @PathVariable Long ruleId,
             @Valid @RequestBody RuleUpdateRequest request
     ) {
         RuleResponse response = ruleService.updateRule(ruleId, request);
-
         return ResponseEntity.ok(ApiResponse.success("Rule updated successfully", response));
     }
 
     @GetMapping("/{ruleId}")
     public ResponseEntity<ApiResponse<RuleResponse>> getRuleById(@PathVariable Long ruleId) {
         RuleResponse response = ruleService.getRuleById(ruleId);
-
         return ResponseEntity.ok(ApiResponse.success("Rule fetched successfully", response));
     }
 
@@ -66,24 +65,23 @@ public class RuleController {
             @ModelAttribute RuleSearchRequest request
     ) {
         PageResponse<RuleResponse> response = ruleService.searchRules(request);
-
         return ResponseEntity.ok(ApiResponse.success("Rules fetched successfully", response));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{ruleId}/status")
     public ResponseEntity<ApiResponse<RuleResponse>> changeRuleStatus(
             @PathVariable Long ruleId,
             @RequestParam RuleStatus status
     ) {
         RuleResponse response = ruleService.changeRuleStatus(ruleId, status);
-
         return ResponseEntity.ok(ApiResponse.success("Rule status changed successfully", response));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{ruleId}")
     public ResponseEntity<ApiResponse<Void>> deleteRule(@PathVariable Long ruleId) {
-        ruleService.deleteRule(ruleId);
-
-        return ResponseEntity.ok(ApiResponse.success("Rule deleted successfully"));
+        String message = ruleService.deleteRule(ruleId);
+        return ResponseEntity.ok(ApiResponse.success(message));
     }
 }

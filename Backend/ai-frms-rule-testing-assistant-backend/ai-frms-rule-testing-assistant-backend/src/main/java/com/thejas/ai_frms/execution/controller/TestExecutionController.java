@@ -12,6 +12,7 @@ import com.thejas.ai_frms.execution.service.TestExecutionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,20 +21,10 @@ import java.util.Map;
 /**
  * REST controller for test and scenario execution.
  *
- * Two execution modes:
- *   TEST CASE execution  — runs a single test case against its linked rule; stores one result record.
- *   SCENARIO execution   — runs all ACTIVE test cases in a scenario; stores one result per test case.
- *
- * Each execution creates a TestExecutionEntity record with:
- *   - total/passed/failed/error counts
- *   - overall executionStatus (PASSED / FAILED / ERROR)
- *   - list of per-test-case ExecutionResultResponse objects
- *
- * Convenience aliases:
- *   POST /test-case/{id}      = POST /test-case with body {testCaseId}
- *   POST /run-testcase/{id}   = same
- *   POST /scenario/{id}       = POST /scenario with body {scenarioId}
- *   POST /run-scenario/{id}   = same
+ * Role access:
+ *   ADMIN  — run + delete executions, view all
+ *   TESTER — run executions, view all
+ *   VIEWER — view executions only
  */
 @RestController
 @RequestMapping(ApiPathConstants.EXECUTIONS)
@@ -45,6 +36,7 @@ public class TestExecutionController {
         this.testExecutionService = testExecutionService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/test-case")
     public ResponseEntity<ApiResponse<ExecuteTestResponse>> executeTestCase(
             @Valid @RequestBody ExecuteTestCaseRequest request
@@ -54,6 +46,7 @@ public class TestExecutionController {
                 .body(ApiResponse.success("Test case executed successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/test-case/{testCaseId}")
     public ResponseEntity<ApiResponse<ExecuteTestResponse>> executeTestCaseById(
             @PathVariable Long testCaseId,
@@ -67,7 +60,7 @@ public class TestExecutionController {
                 .body(ApiResponse.success("Test case executed successfully", response));
     }
 
-    /** Alias: POST /api/executions/run-testcase/{testCaseId} */
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/run-testcase/{testCaseId}")
     public ResponseEntity<ApiResponse<ExecuteTestResponse>> runTestCaseById(
             @PathVariable Long testCaseId,
@@ -76,6 +69,7 @@ public class TestExecutionController {
         return executeTestCaseById(testCaseId, body);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/scenario")
     public ResponseEntity<ApiResponse<ExecuteTestResponse>> executeScenario(
             @Valid @RequestBody ExecuteScenarioRequest request
@@ -85,6 +79,7 @@ public class TestExecutionController {
                 .body(ApiResponse.success("Scenario executed successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/scenario/{scenarioId}")
     public ResponseEntity<ApiResponse<ExecuteTestResponse>> executeScenarioById(
             @PathVariable Long scenarioId,
@@ -98,7 +93,7 @@ public class TestExecutionController {
                 .body(ApiResponse.success("Scenario executed successfully", response));
     }
 
-    /** Alias: POST /api/executions/run-scenario/{scenarioId} */
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/run-scenario/{scenarioId}")
     public ResponseEntity<ApiResponse<ExecuteTestResponse>> runScenarioById(
             @PathVariable Long scenarioId,
@@ -134,11 +129,11 @@ public class TestExecutionController {
             @RequestParam(defaultValue = "desc") String sortDirection
     ) {
         PageResponse<ExecuteTestResponse> response = testExecutionService.searchExecutions(
-                scenarioId, testCaseId, executionStatus, page, size, sortBy, sortDirection
-        );
+                scenarioId, testCaseId, executionStatus, page, size, sortBy, sortDirection);
         return ResponseEntity.ok(ApiResponse.success("Executions fetched successfully", response));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{executionId}")
     public ResponseEntity<ApiResponse<Void>> deleteExecution(@PathVariable Long executionId) {
         testExecutionService.deleteExecution(executionId);

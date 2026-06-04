@@ -10,6 +10,7 @@ import Pagination from '../../components/common/Pagination'
 import ExecutionResultTable from '../../components/executions/ExecutionResultTable'
 import executionService from '../../services/executionService'
 import useClientPagination from '../../hooks/useClientPagination'
+import { useAuth } from '../../hooks/useAuth'
 import '../../styles/pages.css'
 
 const STATUS_OPTIONS = [
@@ -27,6 +28,7 @@ const TYPE_OPTIONS = [
 
 const ExecutionsPage = () => {
   const navigate = useNavigate()
+  const { isAdmin, isTester } = useAuth()
 
   const [allExecutions, setAllExecutions] = useState([])
   const [loading, setLoading]             = useState(true)
@@ -87,7 +89,7 @@ const ExecutionsPage = () => {
       <PageHeader
         title="Executions"
         subtitle={subtitleText}
-        actions={<Button variant="primary" onClick={() => navigate('/executions/run')}>+ Run Execution</Button>}
+        actions={(isAdmin || isTester) && <Button variant="primary" onClick={() => navigate('/executions/run')}>+ Run Execution</Button>}
       />
 
       <div className="rules-filters">

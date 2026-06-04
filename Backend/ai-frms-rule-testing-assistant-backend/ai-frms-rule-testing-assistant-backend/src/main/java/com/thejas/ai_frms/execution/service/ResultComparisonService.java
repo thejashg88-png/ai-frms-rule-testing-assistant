@@ -1,11 +1,13 @@
 package com.thejas.ai_frms.execution.service;
 
 import com.thejas.ai_frms.execution.dto.ComparisonResult;
+import com.thejas.ai_frms.execution.dto.ExecutionTraceStepResponse;
 import com.thejas.ai_frms.testcase.dto.ExpectedResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -35,6 +37,8 @@ public class ResultComparisonService {
         comparisonResult.setRuleType(actualResult.getRuleType());
         comparisonResult.setInputAmount(actualResult.getInputAmount());
         comparisonResult.setEngineNote(actualResult.getEngineNote());
+        // Carry forward the rule explanation built by the engine
+        comparisonResult.setRuleExplanation(actualResult.getRuleExplanation());
 
         log.info("[EXECUTION] Expected action={}", comparisonResult.getExpectedAction());
         log.info("[EXECUTION] Actual action={}", comparisonResult.getActualAction());
@@ -95,7 +99,47 @@ public class ResultComparisonService {
             log.info("[EXECUTION] Final result=FAILED — {}", failureReason);
         }
 
+        // Append final comparison and result steps to trace from engine
+        try {
+            List<ExecutionTraceStepResponse> trace = actualResult.getExecutionTrace() != null
+                    ? new ArrayList<>(actualResult.getExecutionTrace())
+                    : new ArrayList<>();
+            appendComparisonSteps(trace, comparisonResult, matched);
+            comparisonResult.setExecutionTrace(trace);
+        } catch (Exception e) {
+            log.warn("[EXECUTION TRACE] failed to append comparison steps: {}", e.getMessage());
+        }
+
         return comparisonResult;
+    }
+
+    private void appendComparisonSteps(List<ExecutionTraceStepResponse> trace,
+            ComparisonResult result, boolean matched) {
+        int nextStep = trace.size() + 1;
+        String ruleType = result.getRuleType() != null ? result.getRuleType() : "";
+
+        String expected = result.getExpectedAction() != null
+                ? result.getExpectedAction().name() : "not specified";
+        String actual = result.getActualAction() != null
+                ? result.getActualAction().name() : "null";
+
+        ExecutionTraceStepResponse compareStep = new ExecutionTraceStepResponse();
+        compareStep.setStepNumber(nextStep++);
+        compareStep.setTitle("Compared expected and actual action");
+        compareStep.setDetail("Expected action=" + expected + ", actual action=" + actual);
+        compareStep.setStatus(matched ? "SUCCESS" : "FAILED");
+        compareStep.setRuleType(ruleType);
+        compareStep.setTimestamp(LocalDateTime.now().toString());
+        trace.add(compareStep);
+
+        ExecutionTraceStepResponse finalStep = new ExecutionTraceStepResponse();
+        finalStep.setStepNumber(nextStep);
+        finalStep.setTitle("Final execution result");
+        finalStep.setDetail("Result = " + (matched ? "PASSED" : "FAILED"));
+        finalStep.setStatus(matched ? "SUCCESS" : "FAILED");
+        finalStep.setRuleType(ruleType);
+        finalStep.setTimestamp(LocalDateTime.now().toString());
+        trace.add(finalStep);
     }
 
     private boolean isBlank(String value) {

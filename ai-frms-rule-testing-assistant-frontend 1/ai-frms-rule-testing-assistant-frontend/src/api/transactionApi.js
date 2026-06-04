@@ -26,6 +26,11 @@ export const transactionApi = {
     return response.data
   },
 
+  generateHistory: async (payload) => {
+    const response = await axiosInstance.post('/transactions/generate-history', payload)
+    return response.data
+  },
+
   delete: async (id) => {
     const response = await axiosInstance.delete(`/transactions/${id}`)
     return response.data

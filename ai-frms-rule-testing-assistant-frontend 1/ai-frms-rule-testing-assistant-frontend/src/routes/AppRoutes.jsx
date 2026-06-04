@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 
 import AuthLayout from '../layouts/AuthLayout'
 import MainLayout from '../layouts/MainLayout'
-import ProtectedRoute from './ProtectedRoute'
+import ProtectedRoute, { RoleGuard } from './ProtectedRoute'
 
 import LoginPage  from '../pages/auth/LoginPage'
 import SignUpPage from '../pages/auth/SignUpPage'
@@ -35,6 +35,8 @@ import AiAssistantPage from '../pages/ai/AiAssistantPage'
 
 import ReportsPage from '../pages/reports/ReportsPage'
 
+import AuditLogsPage from '../pages/audit/AuditLogsPage'
+
 import SettingsPage from '../pages/settings/SettingsPage'
 
 import NotFoundPage from '../pages/error/NotFoundPage'
@@ -54,38 +56,41 @@ const AppRoutes = () => {
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
 
-          {/* Rules */}
+          {/* Rules — view: all; create/edit: ADMIN only */}
           <Route path="/rules"                element={<RulesPage />} />
-          <Route path="/rules/create"         element={<CreateRulePage />} />
-          <Route path="/rules/:id/edit"       element={<EditRulePage />} />
+          <Route path="/rules/create"         element={<RoleGuard roles={['ADMIN']}><CreateRulePage /></RoleGuard>} />
+          <Route path="/rules/:id/edit"       element={<RoleGuard roles={['ADMIN']}><EditRulePage /></RoleGuard>} />
 
-          {/* Transactions */}
+          {/* Transactions — view: all; create: ADMIN only */}
           <Route path="/transactions"          element={<TransactionsPage />} />
-          <Route path="/transactions/create"   element={<CreateTransactionPage />} />
+          <Route path="/transactions/create"   element={<RoleGuard roles={['ADMIN']}><CreateTransactionPage /></RoleGuard>} />
           <Route path="/transactions/:id"      element={<TransactionDetailsPage />} />
 
-          {/* Scenarios */}
+          {/* Scenarios — view: all; create/edit: ADMIN only */}
           <Route path="/scenarios"             element={<ScenariosPage />} />
-          <Route path="/scenarios/create"      element={<CreateScenarioPage />} />
+          <Route path="/scenarios/create"      element={<RoleGuard roles={['ADMIN']}><CreateScenarioPage /></RoleGuard>} />
           <Route path="/scenarios/:id"         element={<ScenarioDetailsPage />} />
-          <Route path="/scenarios/:id/edit"    element={<EditScenarioPage />} />
+          <Route path="/scenarios/:id/edit"    element={<RoleGuard roles={['ADMIN']}><EditScenarioPage /></RoleGuard>} />
 
-          {/* Test Cases */}
+          {/* Test Cases — view: all; create/edit: ADMIN+TESTER; delete page: ADMIN only */}
           <Route path="/testcases"             element={<TestCasesPage />} />
-          <Route path="/testcases/create"      element={<CreateTestCasePage />} />
+          <Route path="/testcases/create"      element={<RoleGuard roles={['ADMIN','TESTER']}><CreateTestCasePage /></RoleGuard>} />
           <Route path="/testcases/:id"         element={<TestCaseDetailsPage />} />
-          <Route path="/testcases/:id/edit"    element={<EditTestCasePage />} />
+          <Route path="/testcases/:id/edit"    element={<RoleGuard roles={['ADMIN','TESTER']}><EditTestCasePage /></RoleGuard>} />
 
-          {/* Executions */}
+          {/* Executions — view: all; run: ADMIN+TESTER only */}
           <Route path="/executions"            element={<ExecutionsPage />} />
-          <Route path="/executions/run"        element={<RunExecutionPage />} />
+          <Route path="/executions/run"        element={<RoleGuard roles={['ADMIN','TESTER']}><RunExecutionPage /></RoleGuard>} />
           <Route path="/executions/:id"        element={<ExecutionDetailsPage />} />
 
-          {/* AI Assistant */}
-          <Route path="/ai"                    element={<AiAssistantPage />} />
+          {/* AI Assistant — ADMIN+TESTER only */}
+          <Route path="/ai"                    element={<RoleGuard roles={['ADMIN','TESTER']}><AiAssistantPage /></RoleGuard>} />
 
-          {/* Reports */}
+          {/* Reports — all can view */}
           <Route path="/reports"               element={<ReportsPage />} />
+
+          {/* Audit Logs — ADMIN only */}
+          <Route path="/audit-logs"            element={<RoleGuard roles={['ADMIN']}><AuditLogsPage /></RoleGuard>} />
 
           {/* Settings */}
           <Route path="/settings"              element={<SettingsPage />} />

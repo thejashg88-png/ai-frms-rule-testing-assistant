@@ -7,6 +7,7 @@ import {
   Play,
   BrainCircuit,
   BarChart3,
+  ClipboardList,
   Settings,
 } from 'lucide-react'
 
@@ -17,6 +18,7 @@ export const MENU_ITEMS = [
     icon: LayoutDashboard,
     path: '/dashboard',
     section: 'main',
+    // all roles
   },
   {
     id: 'rules',
@@ -24,6 +26,7 @@ export const MENU_ITEMS = [
     icon: Shield,
     path: '/rules',
     section: 'management',
+    // all roles
   },
   {
     id: 'transactions',
@@ -31,6 +34,7 @@ export const MENU_ITEMS = [
     icon: CreditCard,
     path: '/transactions',
     section: 'management',
+    // all roles
   },
   {
     id: 'scenarios',
@@ -38,6 +42,7 @@ export const MENU_ITEMS = [
     icon: GitBranch,
     path: '/scenarios',
     section: 'testing',
+    // all roles
   },
   {
     id: 'testcases',
@@ -45,6 +50,7 @@ export const MENU_ITEMS = [
     icon: TestTube2,
     path: '/testcases',
     section: 'testing',
+    // all roles
   },
   {
     id: 'executions',
@@ -52,6 +58,7 @@ export const MENU_ITEMS = [
     icon: Play,
     path: '/executions',
     section: 'testing',
+    // all roles
   },
   {
     id: 'ai',
@@ -59,6 +66,7 @@ export const MENU_ITEMS = [
     icon: BrainCircuit,
     path: '/ai',
     section: 'tools',
+    requiredRoles: ['ADMIN', 'TESTER'],
   },
   {
     id: 'reports',
@@ -66,6 +74,15 @@ export const MENU_ITEMS = [
     icon: BarChart3,
     path: '/reports',
     section: 'analytics',
+    // all roles
+  },
+  {
+    id: 'audit-logs',
+    label: 'Audit Logs',
+    icon: ClipboardList,
+    path: '/audit-logs',
+    section: 'analytics',
+    requiredRoles: ['ADMIN'],
   },
   {
     id: 'settings',
@@ -73,6 +90,7 @@ export const MENU_ITEMS = [
     icon: Settings,
     path: '/settings',
     section: 'user',
+    // all roles
   },
 ]
 

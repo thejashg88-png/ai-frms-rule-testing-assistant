@@ -84,8 +84,24 @@ class AnalyzeFailureRequest(BaseModel):
     The analysis is ruleType-specific — always pass the exact ruleType from the rule
     configuration. Do NOT default to SINGLE_LARGE_TX for unrecognized types; the
     analysis reasoning will be wrong for count-based rules like HIGH_FREQ_TXN.
+
+    Enriched fields (optional, sent by Spring Boot when available):
+        ruleConfig              — full rule configuration dict (txnCount, frequencyHours, action, etc.)
+        testCaseInput           — the test case input data sent to the rule engine
+        failureReason           — short reason string from the rule engine (e.g. "Threshold not reached")
+        matchedCount            — total transactions evaluated by the rule (historical + current)
+        requiredCount           — configured txnCount threshold the rule needs to trigger
+        historicalTransactionCount — prior transactions found for the same card/customer/device
+        currentCount            — the current transaction being evaluated
+        frequencyWindow         — human-readable window string (e.g. "last 1 hour")
+        ruleExplanation         — structured explanation of what the rule does
+        executionTrace          — ordered list of rule evaluation steps from the engine
+
+    All enriched fields are Optional and default to None — missing fields do not break
+    existing behavior; the prompt builder includes only fields that are present.
     """
 
+    # Core fields (always required)
     testCaseName: str = Field(..., description="Name of the failed test case")
     ruleType: str = Field(..., description="Type of the fraud rule being tested")
     expectedResult: str = Field(..., description="Expected outcome: MONITOR, REJECT, ACCEPT")
@@ -93,15 +109,33 @@ class AnalyzeFailureRequest(BaseModel):
     inputData: Optional[Dict[str, Any]] = Field(None, description="Transaction input data used in the test")
     executionLogs: Optional[str] = Field(None, description="Rule engine execution logs")
 
+    # Enriched context fields (optional — sent by Spring Boot when available)
+    ruleConfig: Optional[Dict[str, Any]] = Field(None, description="Full rule configuration (txnCount, frequencyHours, action, etc.)")
+    testCaseInput: Optional[Dict[str, Any]] = Field(None, description="Test case input sent to the rule engine")
+    failureReason: Optional[str] = Field(None, description="Short failure reason from the rule engine")
+    matchedCount: Optional[int] = Field(None, description="Total transactions evaluated (historical + current)")
+    requiredCount: Optional[int] = Field(None, description="Configured txnCount threshold required to trigger the rule")
+    historicalTransactionCount: Optional[int] = Field(None, description="Prior transactions found for the same card/customer/device")
+    currentCount: Optional[int] = Field(None, description="Current transaction count in this evaluation")
+    frequencyWindow: Optional[str] = Field(None, description="Human-readable frequency window (e.g. 'last 1 hour')")
+    ruleExplanation: Optional[Dict[str, Any]] = Field(None, description="Structured rule explanation")
+    executionTrace: Optional[list] = Field(None, description="Ordered rule evaluation steps from the engine")
+
     model_config = {
         "json_schema_extra": {
             "example": {
-                "testCaseName": "Structuring monitor case",
-                "ruleType": "STRUCTURING",
+                "testCaseName": "High Frequency Monitor Case",
+                "ruleType": "HIGH_FREQ_TXN",
+                "ruleConfig": {"txnCount": 5, "frequencyHours": 1, "action": "MONITOR"},
+                "testCaseInput": {"amount": 150000, "cardNumber": "****3333"},
                 "expectedResult": "MONITOR",
                 "actualResult": "ACCEPT",
-                "inputData": {},
-                "executionLogs": "Rule did not trigger"
+                "failureReason": "Threshold not reached",
+                "matchedCount": 1,
+                "historicalTransactionCount": 0,
+                "currentCount": 1,
+                "requiredCount": 5,
+                "frequencyWindow": "last 1 hour"
             }
         }
     }

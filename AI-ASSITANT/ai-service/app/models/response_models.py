@@ -58,14 +58,24 @@ class RuleExplanationData(BaseModel):
 class FailureAnalysisData(BaseModel):
     """
     Failure analysis result for a test case that returned an unexpected outcome.
-    possibleReasons and debuggingSteps are always non-empty lists.
-    riskImpact communicates the production consequence of leaving the bug unfixed.
+
+    New fields (added when Spring Boot sends enriched context):
+        summary    — one-sentence description of what happened and why
+        rootCause  — single most likely root cause
+        confidence — 0-100 integer; how confident the AI is given the context provided
+
+    Legacy fields (always present for backward compatibility):
+        possibleReasons and debuggingSteps are always non-empty lists.
+        riskImpact communicates the production consequence of leaving the bug unfixed.
     """
 
+    summary: Optional[str] = None
+    rootCause: Optional[str] = None
     possibleReasons: List[str]
     debuggingSteps: List[str]
     recommendedFix: str
     riskImpact: str
+    confidence: Optional[int] = None
 
 
 class TransactionPayload(BaseModel):

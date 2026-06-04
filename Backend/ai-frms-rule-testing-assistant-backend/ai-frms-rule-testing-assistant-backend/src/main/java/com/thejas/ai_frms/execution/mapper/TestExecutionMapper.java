@@ -83,6 +83,10 @@ public final class TestExecutionMapper {
                 // Backfill in case entity columns were not yet persisted (old records)
                 if (response.getFailureReason() == null) response.setFailureReason(cr.getFailureReason());
                 if (response.getExpectedOutcome() == null) response.setExpectedOutcome(cr.getExpectedOutcome());
+                // Map rule explanation (stored in ComparisonResult JSON — no extra DB column needed)
+                response.setRuleExplanation(cr.getRuleExplanation());
+                // Map execution trace (stored in ComparisonResult JSON — no extra DB column needed)
+                response.setExecutionTrace(cr.getExecutionTrace());
             }
         }
 

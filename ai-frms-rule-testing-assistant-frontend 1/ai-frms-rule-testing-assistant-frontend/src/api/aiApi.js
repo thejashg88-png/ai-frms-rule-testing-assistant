@@ -20,7 +20,10 @@ export const aiApi = {
     return response.data
   },
 
-  // Payload: { executionId, testCaseName, ruleType, expectedResult, actualResult, inputData, executionLogs }
+  // Payload: { executionId, testCaseName, ruleType, expectedResult (object), actualResult, inputData (card masked),
+  //            executionLogs, ruleConfig, testCaseInput, failureReason,
+  //            matchedCount, requiredCount, historicalTransactionCount, currentCount, frequencyWindow,
+  //            ruleExplanation (object), executionTrace (array) }
   analyzeFailure: async (data) => {
     console.log('[aiApi.analyzeFailure request payload]', data)
     const response = await axiosInstance.post('/ai/analyze-failure', data)

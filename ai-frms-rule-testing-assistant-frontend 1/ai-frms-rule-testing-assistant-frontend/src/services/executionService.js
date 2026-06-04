@@ -195,8 +195,10 @@ export const executionService = {
         passedCount:     body?.passedCount  ?? 0,
         failedCount:     body?.failedCount  ?? 0,
         results:         body?.results      ?? [],
+        executionTrace:  body?.executionTrace ?? firstResult?.executionTrace ?? null,
       }
 
+      console.log('[Run Test firstResult.executionTrace]', firstResult?.executionTrace)
       console.log('[Run Test Normalized Result]', normalizedResult)
       return normalizedResult
     }

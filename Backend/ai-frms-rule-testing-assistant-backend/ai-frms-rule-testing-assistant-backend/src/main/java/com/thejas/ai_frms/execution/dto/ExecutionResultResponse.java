@@ -4,6 +4,7 @@ import com.thejas.ai_frms.common.enums.ExecutionStatus;
 import com.thejas.ai_frms.common.enums.RuleAction;
 import lombok.Getter;
 import lombok.Setter;
+import com.thejas.ai_frms.execution.dto.RuleEvaluationExplanationResponse;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -48,4 +49,16 @@ public class ExecutionResultResponse {
     private ComparisonResult comparisonResult;
 
     private LocalDateTime executedAt;
+
+    // Detailed rule evaluation explanation — populated from ComparisonResult JSON
+    private RuleEvaluationExplanationResponse ruleExplanation;
+
+    public RuleEvaluationExplanationResponse getRuleExplanation() { return ruleExplanation; }
+    public void setRuleExplanation(RuleEvaluationExplanationResponse ruleExplanation) { this.ruleExplanation = ruleExplanation; }
+
+    // Step-by-step execution trace — populated from ComparisonResult JSON (no extra DB column needed)
+    private java.util.List<ExecutionTraceStepResponse> executionTrace;
+
+    public java.util.List<ExecutionTraceStepResponse> getExecutionTrace() { return executionTrace; }
+    public void setExecutionTrace(java.util.List<ExecutionTraceStepResponse> executionTrace) { this.executionTrace = executionTrace; }
 }

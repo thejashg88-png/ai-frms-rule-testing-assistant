@@ -1218,23 +1218,178 @@ class MockLLMProvider(BaseLLMProvider):
 
     # ------------------------------------------------------------------
 
-    def _failure_analysis(self, req: AnalyzeFailureRequest) -> dict:
+    def _failure_analysis(self, req: AnalyzeFailureRequest) -> dict:  # noqa: C901
         expected = req.expectedResult.upper()
         actual = req.actualResult.upper()
         rule_type = req.ruleType.upper()
         logs = req.executionLogs or ""
 
+        # Build a count summary string from enriched fields when available
+        count_context = ""
+        if req.matchedCount is not None and req.requiredCount is not None:
+            hist = req.historicalTransactionCount if req.historicalTransactionCount is not None else "?"
+            window = f" within {req.frequencyWindow}" if req.frequencyWindow else ""
+            count_context = (
+                f"The rule requires {req.requiredCount} transactions{window} "
+                f"but only {req.matchedCount} were matched ({hist} historical)."
+            )
+
+        failure_reason_str = f" Rule engine reason: {req.failureReason}." if req.failureReason else ""
+
+        # ----------------------------------------------------------------
+        # Branch 1 — False negative: rule should have fired but returned ACCEPT
+        # ----------------------------------------------------------------
         if expected in ("MONITOR", "REJECT", "BLOCK") and actual == "ACCEPT":
-            return {
-                "possibleReasons": [
-                    f"The {rule_type} rule threshold conditions were not satisfied by the test input data.",
+
+            # HIGH_FREQ_TXN / TXN_VELOCITY / SEQUENTIAL_TXN: count-based, needs history
+            if rule_type in ("HIGH_FREQ_TXN", "TXN_VELOCITY", "SEQUENTIAL_TXN") and req.requiredCount is not None:
+                hist = req.historicalTransactionCount if req.historicalTransactionCount is not None else 0
+                matched = req.matchedCount if req.matchedCount is not None else hist
+                window = req.frequencyWindow or "the configured time window"
+                needed = max(0, req.requiredCount - matched)
+                summary = (
+                    f"The {rule_type} test failed because the rule requires "
+                    f"{req.requiredCount} transactions in {window}, but only "
+                    f"{matched} total were matched "
+                    f"({'no historical transactions found' if hist == 0 else f'{hist} historical'}). "
+                    f"Threshold not reached."
+                )
+                root_cause = (
+                    f"No prior transactions found for this card/customer/device in {window}."
+                    if hist == 0 else
+                    f"Only {hist} historical transaction(s) matched — {needed} more needed to reach threshold of {req.requiredCount}."
+                )
+                possible_reasons = [
+                    f"{rule_type} requires {req.requiredCount} transactions in {window} — only {matched} total were evaluated{' (0 historical)' if hist == 0 else f' ({hist} historical)'}.",
+                    "Test database has no prior transactions matching this card/customer/device in the time window." if hist == 0 else f"Insufficient history: {hist} of {req.requiredCount - 1} required prior transactions exist.",
+                    "The rule matches transactions by customerId, track2_data, or serialNumber — confirm all test transactions share the same matching key.",
+                    "Transactions with timestamps outside the rolling time window are excluded — verify all test transactions fall within the window.",
+                    f"Rule configuration may differ from test assumptions — verify txnCount={req.requiredCount} is the correct threshold.",
+                ]
+                debugging_steps = [
+                    f"1. Check the test database: does it contain {req.requiredCount - 1} prior transactions for the same card/customer/device in {window}?",
+                    "2. Identify which field the rule uses as the matching key (customerId, track2_data, or serialNumber) and confirm all test transactions share that exact value.",
+                    f"3. Verify timestamps: all {req.requiredCount} transactions (historical + current) must have timestamps within the configured frequency window.",
+                    "4. Enable rule engine trace logging to confirm how many transactions were counted in the evaluation.",
+                    f"5. Confirm the rule's txnCount configuration is {req.requiredCount} — check for environment-specific overrides.",
+                ]
+                recommended_fix = (
+                    f"Seed the test database with {req.requiredCount - 1} historical transactions "
+                    f"sharing the same card/customer/device identifier, all within {window}, "
+                    f"before running this test case. {rule_type} needs {req.requiredCount} total "
+                    f"matching transactions to fire."
+                )
+                confidence = 90
+
+            # UNUSUAL_AMT: needs customer spending baseline
+            elif rule_type == "UNUSUAL_AMT":
+                hist = req.historicalTransactionCount if req.historicalTransactionCount is not None else None
+                hist_str = str(hist) if hist is not None else "unknown"
+                summary = (
+                    f"The UNUSUAL_AMT test failed because "
+                    + ("no historical transactions were found — a spending baseline cannot be computed." if hist == 0
+                       else f"the current amount did not deviate from the customer baseline by the configured percentageThreshold ({hist_str} historical transactions available).")
+                )
+                root_cause = (
+                    "UNUSUAL_AMT requires a customer spending baseline. No historical transactions were found — the rule cannot compute a baseline and therefore cannot detect anomalies."
+                    if hist == 0 else
+                    "The transaction amount does not exceed the computed baseline threshold (baseline_average × (1 + percentageThreshold / 100))."
+                )
+                possible_reasons = [
+                    f"No customer spending history for this card/customer — baseline cannot be established{'.' if hist == 0 else f' (only {hist_str} records found, may be insufficient).'}",
+                    "The test transaction amount is not high enough to exceed baseline_average × (1 + percentageThreshold / 100).",
+                    "Historical transactions may use a different customerId/card number — baseline lookup returned no results.",
+                    "Baseline computation window excludes the historical test transactions (wrong time range or identity key).",
+                ]
+                debugging_steps = [
+                    f"1. Check historicalTransactionCount = {hist_str} — {'seed the test database with baseline transactions for this customer.' if hist == 0 else 'verify these transactions have the same customerId/card as the current transaction.'}",
+                    "2. Compute the expected threshold: calculate the average of historical amounts, then multiply by (1 + percentageThreshold / 100). Confirm the test transaction amount exceeds this.",
+                    "3. Confirm historical transactions use the exact same customerId or card number as the transaction under test.",
+                    "4. Review the baseline computation logic in the rule engine — verify the time range and identity key used.",
+                ]
+                recommended_fix = (
+                    "Seed historical transactions for this customer/card to establish a spending baseline before running UNUSUAL_AMT tests. "
+                    "The test transaction must exceed: average_historical_amount × (1 + percentageThreshold / 100)."
+                )
+                confidence = 80
+
+            # STRUCTURING: multiple small transactions below threshold within window
+            elif rule_type == "STRUCTURING":
+                txn_count = (req.ruleConfig or {}).get("txnCount") or (req.ruleConfig or {}).get("txnCount") or req.requiredCount or "?"
+                txn_amount = (req.ruleConfig or {}).get("txnAmount") or "?"
+                freq = (req.ruleConfig or {}).get("frequencyHours") or (req.ruleConfig or {}).get("frequency") or req.frequencyWindow or "?"
+                summary = (
+                    f"The STRUCTURING test failed — the rule did not detect the expected pattern of "
+                    f"{txn_count} small transactions below the threshold within the time window."
+                )
+                root_cause = (
+                    "Structuring detection requires multiple transactions each BELOW the configured txnAmount threshold "
+                    "within the frequency window. One or more conditions was not met."
+                )
+                possible_reasons = [
+                    f"Each of the {txn_count} test transactions must be strictly BELOW txnAmount {txn_amount} — amounts equal to the threshold do NOT count.",
+                    f"Not all test transactions fall within the {freq}-hour rolling window.",
+                    "Test transactions may not share the same customerId/account identifier for the rule's grouping lookup.",
+                    f"The rule engine may require exactly {txn_count} qualifying transactions — verify the count is met.",
+                ]
+                debugging_steps = [
+                    f"1. Verify each test transaction amount is strictly LESS THAN the configured txnAmount threshold {txn_amount}.",
+                    f"2. Confirm all {txn_count} transactions have timestamps within the {freq}-hour window.",
+                    "3. Check that all test transactions share the same customerId/account identifier for grouping.",
+                    "4. Review the rule engine comparison: 'less than' (not 'less than or equal to') must be used for txnAmount.",
+                ]
+                recommended_fix = (
+                    f"Ensure all {txn_count} test transactions are: (1) BELOW txnAmount {txn_amount}, "
+                    f"(2) within the {freq}-hour window, and (3) share the same customer/account identifier."
+                )
+                confidence = 80
+
+            # SINGLE_LARGE_TX: pure amount comparison
+            elif rule_type == "SINGLE_LARGE_TX":
+                max_amount = (req.ruleConfig or {}).get("maxAmount") or "?"
+                summary = (
+                    f"The SINGLE_LARGE_TX test failed — the transaction amount did not exceed maxAmount {max_amount}."
+                    + failure_reason_str
+                )
+                root_cause = f"Transaction amount is below maxAmount ({max_amount}). SINGLE_LARGE_TX triggers only when amount > maxAmount."
+                possible_reasons = [
+                    f"Test transaction amount is below the configured maxAmount {max_amount}.",
+                    "Amount field may be encoded as a zero-padded string — verify Long.parseLong() parsing is correct.",
+                    f"maxAmount in the test environment may be misconfigured (different from expected {max_amount}).",
+                    "Rule may be comparing against a stale cached configuration value.",
+                ]
+                debugging_steps = [
+                    f"1. Confirm the test transaction amount is numerically GREATER THAN maxAmount {max_amount}.",
+                    "2. Verify the amount field is parsed correctly from its zero-padded string format (e.g. '00000150000' = 150000).",
+                    f"3. Check the rule configuration in the test environment — maxAmount should be {max_amount}.",
+                    "4. Enable rule trace logging to print the parsed amount and threshold values side by side.",
+                ]
+                recommended_fix = (
+                    f"Set the test transaction amount to a value clearly above maxAmount {max_amount}. "
+                    "Verify the amount is parsed correctly from its zero-padded string format before the comparison."
+                )
+                confidence = 85
+
+            # Generic false-negative for all other rule types
+            else:
+                summary = (
+                    f"The {rule_type} test returned ACCEPT instead of {expected}. "
+                    f"Threshold conditions were not satisfied.{failure_reason_str}"
+                    + (f" {count_context}" if count_context else "")
+                )
+                root_cause = (
+                    count_context if count_context
+                    else f"{rule_type} evaluation conditions were not met by the test input data."
+                )
+                possible_reasons = [
+                    f"The {rule_type} rule threshold conditions were not satisfied by the test input data." + (f" {count_context}" if count_context else ""),
                     "Transaction count or cumulative amount did not reach the configured trigger threshold.",
                     "Time window calculation may have excluded one or more transactions.",
                     "Rule may be inactive or incorrectly configured in the test environment.",
                     "Input data format mismatch — amount or timestamp fields may be incorrectly encoded.",
                     "Rule engine may have encountered a parsing exception that was silently swallowed.",
-                ],
-                "debuggingSteps": [
+                ]
+                debugging_steps = [
                     "1. Verify the input transaction count equals or exceeds the rule's configured threshold.",
                     "2. Log the parsed amount value and compare it numerically against the rule threshold.",
                     "3. Validate all timestamps fall within the configured time window — check timezone handling.",
@@ -1242,25 +1397,44 @@ class MockLLMProvider(BaseLLMProvider):
                     "5. Add trace logging inside the rule evaluation to print each condition result.",
                     "6. Reproduce with minimal data: simplest possible input that should trigger the rule.",
                     f"7. Review execution logs for clues: {logs[:300] + '...' if len(logs) > 300 else logs or 'No logs provided.'}",
-                ],
-                "recommendedFix": (
+                ]
+                recommended_fix = (
                     f"Audit the trigger condition logic in the {rule_type} rule handler. "
                     "Verify: (1) All required conditions are checked with correct operators (>= vs >). "
                     "(2) Amount is parsed from zero-padded string using Long.parseLong() without errors. "
                     "(3) Time window comparison uses the correct unit (hours vs minutes). "
-                    "(4) Rule configuration is loaded at startup and not stale from cache. "
-                    "Write a focused unit test with known-good values that should definitely trigger the rule."
-                ),
+                    "(4) Rule configuration is loaded at startup and not stale from cache."
+                )
+                confidence = 65
+
+            return {
+                "summary": summary,
+                "rootCause": root_cause,
+                "possibleReasons": possible_reasons,
+                "debuggingSteps": debugging_steps,
+                "recommendedFix": recommended_fix,
                 "riskImpact": (
                     f"If this {rule_type} rule is silently failing in production, fraudulent transactions "
                     f"are being ACCEPTED instead of {expected}. This is a critical gap — suspicious activity "
                     "goes undetected, regulatory reporting obligations are missed, and the institution "
                     "faces financial loss and potential compliance penalties. Prioritize as P1."
                 ),
+                "confidence": confidence,
             }
 
+        # ----------------------------------------------------------------
+        # Branch 2 — False positive: rule fired on data that should pass
+        # ----------------------------------------------------------------
         elif expected == "ACCEPT" and actual in ("REJECT", "MONITOR", "BLOCK"):
             return {
+                "summary": (
+                    f"The {rule_type} test returned {actual} instead of ACCEPT — "
+                    "the rule fired on data that should be below the trigger threshold (false positive)."
+                ),
+                "rootCause": (
+                    "Rule threshold is too aggressive, or test input data unintentionally matches "
+                    "the rule's trigger conditions."
+                ),
                 "possibleReasons": [
                     "Rule threshold is too aggressive — triggering on legitimate transaction data.",
                     "Test input data unintentionally matches the rule's trigger conditions.",
@@ -1278,9 +1452,9 @@ class MockLLMProvider(BaseLLMProvider):
                 ],
                 "recommendedFix": (
                     "This is a false positive scenario. Steps: (1) Clean all test state between runs. "
-                    "(2) Ensure test input values are clearly within 'safe' boundaries (not near thresholds). "
+                    "(2) Ensure test input values are clearly within safe boundaries (not near thresholds). "
                     "(3) Check test environment rule configuration against production values. "
-                    "(4) If rule is correctly firing on the test data, update the test's expectedResult "
+                    "(4) If the rule is correctly firing on the test data, update the test's expectedResult "
                     "to reflect the actual rule behavior — the test expectation may be wrong."
                 ),
                 "riskImpact": (
@@ -1288,10 +1462,22 @@ class MockLLMProvider(BaseLLMProvider):
                     "and revenue loss. However, this is less critical than false negatives from a fraud "
                     "perspective. Investigate threshold calibration and test data quality."
                 ),
+                "confidence": 70,
             }
 
+        # ----------------------------------------------------------------
+        # Branch 3 — Other unexpected mismatch (e.g. MONITOR vs REJECT)
+        # ----------------------------------------------------------------
         else:
             return {
+                "summary": (
+                    f"The {rule_type} test returned {actual} instead of {expected} — "
+                    "unexpected rule action mismatch."
+                ),
+                "rootCause": (
+                    f"Rule engine returned {actual} when {expected} was expected. "
+                    "Possible rule logic defect or misconfigured test expectation."
+                ),
                 "possibleReasons": [
                     f"Expected {expected} but rule engine returned {actual} — unexpected rule behavior.",
                     "Rule configuration may differ from the assumptions made when designing the test.",
@@ -1319,6 +1505,7 @@ class MockLLMProvider(BaseLLMProvider):
                     "is a security gap (fraud not caught) or a false positive (legitimate tx blocked) "
                     "and prioritize accordingly."
                 ),
+                "confidence": 55,
             }
 
     # ------------------------------------------------------------------

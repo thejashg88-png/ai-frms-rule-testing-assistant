@@ -1,5 +1,7 @@
 package com.thejas.ai_frms.transaction.dto;
 
+import com.thejas.ai_frms.execution.dto.RuleEvaluationExplanationResponse;
+
 public class RuleEvaluationResult {
 
     private final String riskEvaluationStatus;
@@ -27,4 +29,9 @@ public class RuleEvaluationResult {
     public String getTriggeredRuleType() { return triggeredRuleType; }
     public String getTriggeredAction() { return triggeredAction; }
     public String getRiskReason() { return riskReason; }
+
+    // Non-final — set after construction via setRuleExplanation()
+    private RuleEvaluationExplanationResponse ruleExplanation;
+    public RuleEvaluationExplanationResponse getRuleExplanation() { return ruleExplanation; }
+    public void setRuleExplanation(RuleEvaluationExplanationResponse ruleExplanation) { this.ruleExplanation = ruleExplanation; }
 }

@@ -6,6 +6,7 @@ import Badge from '../../components/common/Badge'
 import Loader from '../../components/common/Loader'
 import ErrorMessage from '../../components/common/ErrorMessage'
 import DashboardSummaryCards from '../../components/dashboard/DashboardSummaryCards'
+import DashboardCharts from '../../components/dashboard/DashboardCharts'
 import dashboardService from '../../services/dashboardService'
 import '../../styles/pages.css'
 
@@ -86,17 +87,12 @@ const DashboardPage = () => {
   if (loading) return <Loader message="Loading dashboard..." />
   if (error) return <ErrorMessage title="Failed to load dashboard" message={error} onRetry={load} />
 
-  const stats = {
-    totalRules:      summary?.totalRules      ?? 0,
-    activeRules:     summary?.activeRules     ?? 0,
-    totalScenarios:  summary?.totalScenarios  ?? 0,
-    totalTests:      summary?.totalTestCases  ?? 0,
-    successRate:     Math.round(summary?.passRate ?? 0),
-  }
-
-  const totalExec   = summary?.totalExecutions   ?? 0
-  const passedExec  = summary?.passedExecutions  ?? 0
-  const failedExec  = summary?.failedExecutions  ?? 0
+  const totalExec  = summary?.totalExecutions  ?? 0
+  const passedExec = summary?.passedExecutions ?? 0
+  const failedExec = summary?.failedExecutions ?? 0
+  const passRate   = summary?.passRate         ?? 0
+  const totalRules = summary?.totalRules       ?? 0
+  const activeRules= summary?.activeRules      ?? 0
 
   return (
     <div className="dashboard-page">
@@ -105,10 +101,9 @@ const DashboardPage = () => {
         subtitle="AI FRMS Rule Testing Assistant — overview"
       />
 
-      <DashboardSummaryCards stats={stats} />
+      <DashboardSummaryCards summary={summary} />
 
       <div className="dashboard-body-grid">
-        {/* ── Recent Activity (main column) ── */}
         <Card
           title="Recent Test Executions"
           subtitle="Latest rule test runs"
@@ -121,26 +116,28 @@ const DashboardPage = () => {
           />
         </Card>
 
-        {/* ── Side stats ── */}
         <div className="dashboard-side-stack">
           <Card title="Execution Summary">
             <div className="stat-list">
               <StatRow label="Total Executions" value={totalExec}   tone="blue" />
               <StatRow label="Passed"           value={passedExec}  tone="positive" />
               <StatRow label="Failed"           value={failedExec}  tone="negative" />
-              <StatRow label="Success Rate"     value={`${stats.successRate}%`} tone="positive" />
+              <StatRow label="Pass Rate"        value={`${Number(passRate).toFixed(2)}%`} tone="positive" />
             </div>
           </Card>
 
           <Card title="Rules Overview">
             <div className="stat-list">
-              <StatRow label="Total Rules" value={stats.totalRules}  tone="blue" />
-              <StatRow label="Active"      value={stats.activeRules} tone="positive" />
-              <StatRow label="Inactive"    value={stats.totalRules - stats.activeRules} />
+              <StatRow label="Total Rules" value={totalRules}              tone="blue" />
+              <StatRow label="Active"      value={activeRules}             tone="positive" />
+              <StatRow label="Inactive"    value={totalRules - activeRules} />
             </div>
           </Card>
+
         </div>
       </div>
+
+      <DashboardCharts summary={summary} />
     </div>
   )
 }

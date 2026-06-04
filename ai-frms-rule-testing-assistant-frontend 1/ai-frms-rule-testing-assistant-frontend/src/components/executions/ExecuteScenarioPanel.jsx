@@ -6,6 +6,15 @@ import executionService from '../../services/executionService'
 import { useToast } from '../../hooks/useToast'
 import PassFailBadge from './PassFailBadge'
 import FailureReasonBox from './FailureReasonBox'
+import RuleExplanationPanel, { getRuleExplanation } from '../common/RuleExplanationPanel'
+import ExecutionTracePanel, { getExecutionTrace } from '../common/ExecutionTracePanel'
+
+const normalizeStatus = (val) => {
+  const v = String(val || '').toUpperCase()
+  if (v === 'PASS' || v === 'PASSED' || v === 'SUCCESS') return 'PASSED'
+  if (v === 'FAIL' || v === 'FAILED' || v === 'ERROR')   return 'FAILED'
+  return v || 'UNKNOWN'
+}
 
 const ExecuteScenarioPanel = ({ onExecuted }) => {
   const { addToast } = useToast()
@@ -61,6 +70,38 @@ const ExecuteScenarioPanel = ({ onExecuted }) => {
             <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-secondary)' }}>{result.durationMs}ms</span>
           </div>
           <FailureReasonBox reason={result.failureReason} />
+
+          {/* Per-test-case breakdown with individual rule explanations */}
+          {Array.isArray(result.results) && result.results.length > 0 && (
+            <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {result.results.map((r, i) => {
+                const tcName    = r.testCaseName || r.name || `Test Case ${i + 1}`
+                const tcStatus  = normalizeStatus(r.resultStatus || r.status)
+                const explanation = getRuleExplanation(r)
+                return (
+                  <div key={i} style={{
+                    padding: '10px 14px',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    background: 'var(--bg-primary)',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <PassFailBadge status={tcStatus} />
+                      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{tcName}</span>
+                      {r.actualAction && (
+                        <span style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 4 }}>
+                          → {r.actualAction}
+                        </span>
+                      )}
+                    </div>
+                    {r.failureReason && <FailureReasonBox reason={r.failureReason} />}
+                    {explanation && <RuleExplanationPanel explanation={explanation} />}
+                    <ExecutionTracePanel trace={getExecutionTrace(r)} />
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -65,6 +65,10 @@ app:
   cors:
     allowed-origins: http://localhost:3000,http://localhost:5173,http://localhost:4200
 
+  jwt:
+    secret: frms-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256-algorithm-2024
+    expiration-ms: 86400000
+
   integration:
     frms:
       base-url: http://localhost:8083

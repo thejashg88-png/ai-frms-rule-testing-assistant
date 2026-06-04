@@ -13,6 +13,12 @@ const mockSummary = {
   passedExecutions: 38,
   failedExecutions: 9,
   passRate: 80.85,
+  mostFailedRuleType: 'HIGH_FREQ_TXN',
+  mostTriggeredRule: 'High Value Single Transaction',
+  passFailDistribution: { PASSED: 38, FAILED: 9 },
+  executionsByRuleType: { HIGH_FREQ_TXN: 12, UNUSUAL_AMT: 8, TXN_VELOCITY: 7, STRUCTURING: 5, SINGLE_LARGE_TX: 4 },
+  riskActionDistribution: { ACCEPT: 22, MONITOR: 15, REJECT: 10 },
+  transactionStatusDistribution: { APPROVED: 30, DECLINED: 12, PENDING: 5 },
 }
 
 const mockRecentExecutions = [
@@ -42,8 +48,20 @@ export const dashboardService = {
       // totalScenarios defaults to 0 if absent because some backend versions omit it.
       const raw = resp?.data?.data ?? resp?.data ?? resp
       return {
-        ...raw,
-        totalScenarios: raw?.totalScenarios ?? 0,
+        totalRules:                  raw?.totalRules                  ?? 0,
+        activeRules:                 raw?.activeRules                 ?? 0,
+        totalScenarios:              raw?.totalScenarios              ?? 0,
+        totalTestCases:              raw?.totalTestCases              ?? 0,
+        totalExecutions:             raw?.totalExecutions             ?? 0,
+        passedExecutions:            raw?.passedExecutions            ?? 0,
+        failedExecutions:            raw?.failedExecutions            ?? 0,
+        passRate:                    raw?.passRate                    ?? 0,
+        mostFailedRuleType:          raw?.mostFailedRuleType          || 'N/A',
+        mostTriggeredRule:           raw?.mostTriggeredRule           || 'N/A',
+        passFailDistribution:        raw?.passFailDistribution        || {},
+        executionsByRuleType:        raw?.executionsByRuleType        || {},
+        riskActionDistribution:      raw?.riskActionDistribution      || {},
+        transactionStatusDistribution: raw?.transactionStatusDistribution || {},
       }
     } catch (err) {
       throw new Error(errorHandlerService.getErrorMessage(err))

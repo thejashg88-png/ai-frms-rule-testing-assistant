@@ -1,7 +1,7 @@
 import React from 'react'
 import './dashboard.css'
 
-const SummaryCard = ({ title, value, subtitle, icon: Icon, color = 'blue', trend }) => {
+const SummaryCard = ({ title, value, subtitle, icon: Icon, color = 'blue', trend, compact }) => {
   return (
     <div className={`summary-card summary-card-${color}`}>
       <div className="summary-card-header">
@@ -16,7 +16,7 @@ const SummaryCard = ({ title, value, subtitle, icon: Icon, color = 'blue', trend
         </div>
       </div>
       <div className="card-content">
-        <div className="card-value">{value}</div>
+        <div className={compact ? 'card-value-compact' : 'card-value'}>{value}</div>
         {trend !== undefined && (
           <div className={`card-trend trend-${trend >= 0 ? 'up' : 'down'}`}>
             {trend >= 0 ? '↑' : '↓'} {Math.abs(trend)}%

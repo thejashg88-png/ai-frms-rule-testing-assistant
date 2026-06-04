@@ -2,6 +2,7 @@ import React from 'react'
 import PassFailBadge from './PassFailBadge'
 import FailureReasonBox from './FailureReasonBox'
 import Badge from '../common/Badge'
+import RuleExplanationPanel, { getRuleExplanation } from '../common/RuleExplanationPanel'
 
 const ACTION_COLORS = {
   ACCEPT:  { bg: '#dcfce7', color: '#16a34a' },
@@ -33,6 +34,7 @@ const ExecutionDetails = ({ execution }) => {
       <Row label="Duration" value={execution.durationMs != null ? `${execution.durationMs}ms` : null} />
       <Row label="Executed At" value={execution.executedAt ? new Date(execution.executedAt).toLocaleString() : null} />
       <FailureReasonBox reason={execution.failureReason} />
+      <RuleExplanationPanel explanation={getRuleExplanation(execution.results?.[0])} />
     </div>
   )
 }

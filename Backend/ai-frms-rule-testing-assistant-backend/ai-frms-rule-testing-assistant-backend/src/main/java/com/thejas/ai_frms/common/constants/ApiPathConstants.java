@@ -15,6 +15,6 @@ public final class ApiPathConstants {
     public static final String AI_ASSISTANT = API_BASE + "/ai";
     public static final String DASHBOARD = API_BASE + "/dashboard";
     public static final String REPORTS = API_BASE + "/reports";
-    public static final String AUDIT = API_BASE + "/audit";
+    public static final String AUDIT = API_BASE + "/audit-logs";
     public static final String SCHEDULER = API_BASE + "/scheduler";
 }

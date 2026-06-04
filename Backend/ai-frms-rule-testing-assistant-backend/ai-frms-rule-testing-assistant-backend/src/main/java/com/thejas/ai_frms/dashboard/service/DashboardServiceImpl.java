@@ -1,6 +1,8 @@
 package com.thejas.ai_frms.dashboard.service;
 
 import com.thejas.ai_frms.common.enums.ExecutionStatus;
+import com.thejas.ai_frms.common.enums.RuleAction;
+import com.thejas.ai_frms.common.enums.RuleStatus;
 import com.thejas.ai_frms.dashboard.dto.DashboardSummaryResponse;
 import com.thejas.ai_frms.dashboard.dto.ExecutionTrendResponse;
 import com.thejas.ai_frms.dashboard.dto.RuleWiseExecutionStats;
@@ -8,6 +10,7 @@ import com.thejas.ai_frms.execution.dto.ExecuteTestResponse;
 import com.thejas.ai_frms.execution.entity.TestExecutionEntity;
 import com.thejas.ai_frms.execution.mapper.TestExecutionMapper;
 import com.thejas.ai_frms.execution.repository.TestExecutionRepository;
+import com.thejas.ai_frms.execution.repository.TestExecutionResultRepository;
 import com.thejas.ai_frms.rule.entity.RuleEntity;
 import com.thejas.ai_frms.rule.repository.RuleRepository;
 import com.thejas.ai_frms.scenario.entity.TestScenarioEntity;
@@ -27,7 +30,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class DashboardServiceImpl implements DashboardService {
@@ -39,19 +44,22 @@ public class DashboardServiceImpl implements DashboardService {
     private final TestScenarioRepository testScenarioRepository;
     private final TestCaseRepository testCaseRepository;
     private final TestExecutionRepository testExecutionRepository;
+    private final TestExecutionResultRepository testExecutionResultRepository;
 
     public DashboardServiceImpl(
             RuleRepository ruleRepository,
             TransactionRepository transactionRepository,
             TestScenarioRepository testScenarioRepository,
             TestCaseRepository testCaseRepository,
-            TestExecutionRepository testExecutionRepository
+            TestExecutionRepository testExecutionRepository,
+            TestExecutionResultRepository testExecutionResultRepository
     ) {
         this.ruleRepository = ruleRepository;
         this.transactionRepository = transactionRepository;
         this.testScenarioRepository = testScenarioRepository;
         this.testCaseRepository = testCaseRepository;
         this.testExecutionRepository = testExecutionRepository;
+        this.testExecutionResultRepository = testExecutionResultRepository;
     }
 
     @Override
@@ -63,11 +71,11 @@ public class DashboardServiceImpl implements DashboardService {
         long totalTestCases = testCaseRepository.count();
         long totalExecutions = testExecutionRepository.count();
 
-        log.info("[DASHBOARD] Total rules count={}", totalRules);
-        log.info("[DASHBOARD] Total transactions count={}", totalTransactions);
-        log.info("[DASHBOARD] Total scenarios count={}", totalScenarios);
-        log.info("[DASHBOARD] Total test cases count={}", totalTestCases);
-        log.info("[DASHBOARD] Total executions count={}", totalExecutions);
+        log.info("[DASHBOARD] totalRules={}", totalRules);
+        log.info("[DASHBOARD] totalTransactions={}", totalTransactions);
+        log.info("[DASHBOARD] totalScenarios={}", totalScenarios);
+        log.info("[DASHBOARD] totalTestCases={}", totalTestCases);
+        log.info("[DASHBOARD] totalExecutions={}", totalExecutions);
 
         long passedExecutions = countExecutionsByStatus(ExecutionStatus.PASSED);
         long failedExecutions = countExecutionsByStatus(ExecutionStatus.FAILED);
@@ -75,10 +83,106 @@ public class DashboardServiceImpl implements DashboardService {
         long runningExecutions = countExecutionsByStatus(ExecutionStatus.RUNNING);
         long pendingExecutions = countExecutionsByStatus(ExecutionStatus.PENDING);
 
-        log.info("[DASHBOARD] Execution breakdown passed={}, failed={}, error={}, running={}, pending={}",
-                passedExecutions, failedExecutions, errorExecutions, runningExecutions, pendingExecutions);
+        double passRate = calculatePercentage(passedExecutions, totalExecutions);
+        log.info("[DASHBOARD] passed={}, failed={}, passRate={}", passedExecutions, failedExecutions, passRate);
 
+        // ── Active rules ──────────────────────────────────────────────────────
+        long activeRules = 0;
+        try {
+            activeRules = ruleRepository.countByStatus(RuleStatus.ACTIVE);
+            log.info("[DASHBOARD] activeRules={}", activeRules);
+        } catch (Exception e) {
+            log.warn("[DASHBOARD] Could not count active rules: {}", e.getMessage());
+        }
+
+        // ── Pass/fail distribution chart ──────────────────────────────────────
+        Map<String, Long> passFailDistribution = new LinkedHashMap<>();
+        passFailDistribution.put("PASSED", passedExecutions);
+        passFailDistribution.put("FAILED", failedExecutions);
+
+        // ── Executions by rule type (per test-case result) ────────────────────
+        Map<String, Long> executionsByRuleType = new LinkedHashMap<>();
+        try {
+            List<Object[]> rows = testExecutionResultRepository.countResultsByRuleType();
+            for (Object[] row : rows) {
+                String ruleType = row[0] != null ? String.valueOf(row[0]) : "UNKNOWN";
+                long count = ((Number) row[1]).longValue();
+                executionsByRuleType.put(ruleType, count);
+            }
+            log.info("[DASHBOARD] executionsByRuleType size={}", executionsByRuleType.size());
+        } catch (Exception e) {
+            log.warn("[DASHBOARD] Could not compute executionsByRuleType: {}", e.getMessage());
+        }
+
+        // ── Most failed rule type ─────────────────────────────────────────────
+        String mostFailedRuleType = "N/A";
+        try {
+            List<Object[]> failedRows = testExecutionResultRepository
+                    .countResultsByRuleTypeAndStatus(ExecutionStatus.FAILED);
+            if (!failedRows.isEmpty() && failedRows.get(0)[0] != null) {
+                mostFailedRuleType = String.valueOf(failedRows.get(0)[0]);
+            }
+            log.info("[DASHBOARD] mostFailedRuleType={}", mostFailedRuleType);
+        } catch (Exception e) {
+            log.warn("[DASHBOARD] Could not compute mostFailedRuleType: {}", e.getMessage());
+        }
+
+        // ── Most triggered rule (rule name with most non-ACCEPT results) ───────
+        String mostTriggeredRule = "N/A";
+        try {
+            List<Object[]> triggeredRows = testExecutionResultRepository
+                    .findMostTriggeredRuleName(RuleAction.ACCEPT);
+            if (!triggeredRows.isEmpty() && triggeredRows.get(0)[0] != null) {
+                mostTriggeredRule = String.valueOf(triggeredRows.get(0)[0]);
+            }
+            log.info("[DASHBOARD] mostTriggeredRule={}", mostTriggeredRule);
+        } catch (Exception e) {
+            log.warn("[DASHBOARD] Could not compute mostTriggeredRule: {}", e.getMessage());
+        }
+
+        // ── Risk action distribution (ACCEPT / MONITOR / REJECT) ─────────────
+        Map<String, Long> riskActionDistribution = new LinkedHashMap<>();
+        riskActionDistribution.put("ACCEPT", 0L);
+        riskActionDistribution.put("MONITOR", 0L);
+        riskActionDistribution.put("REJECT", 0L);
+        try {
+            List<Object[]> actionRows = testExecutionResultRepository.countByActualAction();
+            for (Object[] row : actionRows) {
+                if (row[0] != null) {
+                    String action = String.valueOf(row[0]);
+                    long count = ((Number) row[1]).longValue();
+                    riskActionDistribution.put(action, count);
+                }
+            }
+            log.info("[DASHBOARD] riskActionDistribution={}", riskActionDistribution);
+        } catch (Exception e) {
+            log.warn("[DASHBOARD] Could not compute riskActionDistribution: {}", e.getMessage());
+        }
+
+        // ── Transaction status distribution (APPROVED / DECLINED / PENDING) ───
+        Map<String, Long> transactionStatusDistribution = new LinkedHashMap<>();
+        transactionStatusDistribution.put("APPROVED", 0L);
+        transactionStatusDistribution.put("DECLINED", 0L);
+        transactionStatusDistribution.put("PENDING", 0L);
+        try {
+            List<Object[]> statusRows = transactionRepository.countGroupedByTransactionStatus();
+            for (Object[] row : statusRows) {
+                if (row[0] != null) {
+                    String rawStatus = String.valueOf(row[0]).toUpperCase();
+                    long count = ((Number) row[1]).longValue();
+                    String bucket = mapTransactionStatus(rawStatus);
+                    transactionStatusDistribution.merge(bucket, count, Long::sum);
+                }
+            }
+            log.info("[DASHBOARD] transactionStatusDistribution={}", transactionStatusDistribution);
+        } catch (Exception e) {
+            log.warn("[DASHBOARD] Could not compute transactionStatusDistribution: {}", e.getMessage());
+        }
+
+        // ── Build response ────────────────────────────────────────────────────
         DashboardSummaryResponse response = new DashboardSummaryResponse();
+
+        // Existing fields
         response.setTotalRules(totalRules);
         response.setTotalTransactions(totalTransactions);
         response.setTotalScenarios(totalScenarios);
@@ -89,7 +193,17 @@ public class DashboardServiceImpl implements DashboardService {
         response.setErrorExecutions(errorExecutions);
         response.setRunningExecutions(runningExecutions);
         response.setPendingExecutions(pendingExecutions);
-        response.setSuccessRate(calculatePercentage(passedExecutions, totalExecutions));
+        response.setSuccessRate(passRate);
+
+        // New fields
+        response.setActiveRules(activeRules);
+        response.setPassRate(passRate);
+        response.setMostFailedRuleType(mostFailedRuleType);
+        response.setMostTriggeredRule(mostTriggeredRule);
+        response.setPassFailDistribution(passFailDistribution);
+        response.setExecutionsByRuleType(executionsByRuleType);
+        response.setRiskActionDistribution(riskActionDistribution);
+        response.setTransactionStatusDistribution(transactionStatusDistribution);
 
         return response;
     }
@@ -224,5 +338,13 @@ public class DashboardServiceImpl implements DashboardService {
         }
 
         return Math.round(((double) value / total) * 10000.0) / 100.0;
+    }
+
+    private String mapTransactionStatus(String upperStatus) {
+        return switch (upperStatus) {
+            case "SUCCESS", "APPROVED", "COMPLETED" -> "APPROVED";
+            case "PENDING" -> "PENDING";
+            default -> "DECLINED";
+        };
     }
 }

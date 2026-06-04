@@ -1,7 +1,8 @@
-import React, { createContext, useState, useEffect } from 'react'
+import React, { createContext, useState, useEffect, useCallback } from 'react'
 import { getToken, setToken, removeToken } from '../services/tokenService'
 import { tokenService } from '../services/tokenService'
 import authApi from '../api/authApi'
+import { ROLES, canAccess } from '../utils/permissions'
 
 export const AuthContext = createContext(null)
 
@@ -21,6 +22,19 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(false)
   }, [])
 
+  const role = user?.role || null
+
+  useEffect(() => {
+    console.log('[AUTH ROLE]', role)
+  }, [role])
+
+  const isAdmin  = role === ROLES.ADMIN
+  const isTester = role === ROLES.TESTER
+  const isViewer = role === ROLES.VIEWER
+
+  const hasRole = useCallback((...roles) => roles.includes(role), [role])
+  const can     = useCallback((permission) => canAccess(role, permission), [role])
+
   const login = async (email, password) => {
     try {
       setIsLoading(true)
@@ -28,9 +42,9 @@ export const AuthProvider = ({ children }) => {
       const useMock = import.meta.env.VITE_ENABLE_MOCK_LOGIN === 'true'
 
       if (useMock) {
-        // Mock login — no network call
+        // Mock login defaults to ADMIN so all dev flows are accessible
         const mockToken = 'mock-jwt-' + Date.now()
-        const userData = { id: 1, email, name: email.split('@')[0] }
+        const userData = { id: 1, email, name: email.split('@')[0], role: ROLES.ADMIN }
         setToken(mockToken)
         tokenService.setUser(userData)
         setUser(userData)
@@ -103,7 +117,12 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout, register }}>
+    <AuthContext.Provider value={{
+      user, role, isAdmin, isTester, isViewer,
+      isAuthenticated, isLoading,
+      hasRole, can,
+      login, logout, register,
+    }}>
       {children}
     </AuthContext.Provider>
   )

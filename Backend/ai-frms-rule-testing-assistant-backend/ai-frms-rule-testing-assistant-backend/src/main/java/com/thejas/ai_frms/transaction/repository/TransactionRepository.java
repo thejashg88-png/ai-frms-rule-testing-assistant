@@ -48,4 +48,10 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
             LocalDateTime startTime,
             LocalDateTime endTime
     );
+
+    // Dashboard: count transactions grouped by transactionStatus for status distribution chart
+    @Query("SELECT t.transactionStatus, COUNT(t) FROM TransactionEntity t " +
+           "WHERE t.transactionStatus IS NOT NULL GROUP BY t.transactionStatus")
+    List<Object[]> countGroupedByTransactionStatus();
+
 }

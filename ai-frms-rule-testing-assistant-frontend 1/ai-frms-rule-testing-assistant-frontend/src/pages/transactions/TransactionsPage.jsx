@@ -9,6 +9,7 @@ import ErrorMessage from '../../components/common/ErrorMessage'
 import Pagination from '../../components/common/Pagination'
 import TransactionTable from '../../components/transactions/TransactionTable'
 import { useToast } from '../../hooks/useToast'
+import { useAuth } from '../../hooks/useAuth'
 import useClientPagination from '../../hooks/useClientPagination'
 import transactionService from '../../services/transactionService'
 import '../../styles/pages.css'
@@ -38,6 +39,7 @@ const TYPE_OPTIONS = [
 const TransactionsPage = () => {
   const navigate = useNavigate()
   const { addToast } = useToast()
+  const { isAdmin } = useAuth()
 
   // All records fetched from backend (unfiltered)
   const [allTransactions, setAllTransactions] = useState([])
@@ -119,11 +121,11 @@ const TransactionsPage = () => {
       <PageHeader
         title="Transactions"
         subtitle={subtitleText}
-        actions={
+        actions={isAdmin && (
           <Button variant="primary" onClick={() => navigate('/transactions/create')}>
             + Add Transaction
           </Button>
-        }
+        )}
       />
 
       {/* ── Filters ── */}
