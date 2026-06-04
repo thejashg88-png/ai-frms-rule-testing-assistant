@@ -6,6 +6,7 @@ import AiGenerateTestCases from '../../components/ai/AiGenerateTestCases'
 import AiFailureAnalysis from '../../components/ai/AiFailureAnalysis'
 import AiTransactionGenerator from '../../components/ai/AiTransactionGenerator'
 import AiChat from '../../components/ai/AiChat'
+import './ai.css'
 
 // Five AI tabs — each tab renders a standalone component that calls aiService independently.
 // explain  → AiRuleExplanation  — explain what a rule does and its risk level
@@ -24,28 +25,20 @@ const TABS = [
 const AiAssistantPage = () => {
   const [activeTab, setActiveTab] = useState('explain')
 
-  const tabStyle = (id) => ({
-    padding: '8px 18px',
-    border: 'none',
-    cursor: 'pointer',
-    fontWeight: 500,
-    fontSize: 14,
-    borderRadius: 8,
-    background: activeTab === id ? 'var(--primary)' : 'transparent',
-    color: activeTab === id ? 'white' : 'var(--text-secondary)',
-    transition: 'all 0.2s',
-  })
-
   return (
-    <div>
+    <div className="ai-assistant-page">
       <PageHeader
         title="AI Assistant"
         subtitle="Use AI to explain rules, generate test cases, and analyze failures"
       />
 
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: 'var(--bg-secondary)', padding: 4, borderRadius: 10, width: 'fit-content', border: '1px solid var(--border)', flexWrap: 'wrap' }}>
+      <div className="ai-tabs">
         {TABS.map((t) => (
-          <button key={t.id} style={tabStyle(t.id)} onClick={() => setActiveTab(t.id)}>
+          <button
+            key={t.id}
+            className={`ai-tab ${activeTab === t.id ? 'active' : ''}`}
+            onClick={() => setActiveTab(t.id)}
+          >
             {t.label}
           </button>
         ))}

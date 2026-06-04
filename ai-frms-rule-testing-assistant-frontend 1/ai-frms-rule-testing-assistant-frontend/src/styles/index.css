@@ -36,12 +36,17 @@
   --radius-lg: 12px;
   --radius-xl: 16px;
 
-  /* ── Shadows ── */
-  --shadow:    0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 30px rgba(15, 23, 42, 0.1);
+  /* ── Shadows (layered, soft) ── */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow:    0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 2px 4px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12), 0 4px 8px rgba(15, 23, 42, 0.06);
+
+  /* ── Focus ring ── */
+  --ring: 0 0 0 3px rgba(37, 99, 235, 0.16);
 
   /* ── Motion ── */
-  --transition: all 0.2s ease;
+  --transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 
   /* ── AI response surfaces ── */
   --color-ai-response-bg: #f8fafc;
@@ -63,8 +68,12 @@
 
   --primary-light: rgba(37, 99, 235, 0.25);
 
-  --shadow:    0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow:    0 1px 3px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+
+  --ring: 0 0 0 3px rgba(59, 130, 246, 0.3);
 
   /* ── AI response surfaces ── */
   --color-ai-response-bg: #1f2937;
@@ -82,6 +91,9 @@ body {
   background: var(--bg-secondary);
   color: var(--text-primary);
   transition: background-color 0.2s ease, color 0.2s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 button,
@@ -95,8 +107,13 @@ select {
 .card {
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow);
 }
 
 .card-header {

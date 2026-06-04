@@ -108,28 +108,7 @@ const AiChat = () => {
       {showSampleQuestions && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
           {SAMPLE_QUESTIONS.map((q, i) => (
-            <button
-              key={i}
-              onClick={() => sendMessage(q)}
-              style={{
-                padding: '6px 12px',
-                border: '1px solid var(--border)',
-                borderRadius: 20,
-                background: 'var(--bg-secondary)',
-                color: 'var(--text-secondary)',
-                fontSize: 12,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--primary)'
-                e.currentTarget.style.color = 'var(--primary)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border)'
-                e.currentTarget.style.color = 'var(--text-secondary)'
-              }}
-            >
+            <button key={i} className="ai-chip" onClick={() => sendMessage(q)}>
               {q}
             </button>
           ))}

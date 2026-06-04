@@ -1,0 +1,105 @@
+/* ============================================================
+   AI Assistant page styles
+   ============================================================ */
+
+.ai-assistant-page {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ── Segmented tab control ── */
+.ai-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 24px;
+  padding: 5px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.ai-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.ai-tab:hover:not(.active) {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.ai-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.ai-tab.active {
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.3), 0 2px 8px rgba(37, 99, 235, 0.28);
+}
+
+/* ── Chips (sample questions / suggestions) ── */
+.ai-chip {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.ai-chip:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+  transform: translateY(-1px);
+}
+
+.ai-chip:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+/* ── AI response surface ── */
+.ai-response-box {
+  background: var(--color-ai-response-bg);
+  border: 1px solid var(--color-ai-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  min-height: 120px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ai-response-box:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .ai-tabs {
+    display: flex;
+    width: 100%;
+  }
+  .ai-tab {
+    flex: 1;
+    justify-content: center;
+    padding: 9px 12px;
+  }
+}
