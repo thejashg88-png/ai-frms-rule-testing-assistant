@@ -101,7 +101,17 @@ const DashboardPage = () => {
         subtitle="AI FRMS Rule Testing Assistant — overview"
       />
 
+      <div className="dashboard-section">
+        <h2 className="dashboard-section-title">Key Metrics</h2>
+        <span className="dashboard-section-line" />
+      </div>
+
       <DashboardSummaryCards summary={summary} />
+
+      <div className="dashboard-section">
+        <h2 className="dashboard-section-title">Recent Activity</h2>
+        <span className="dashboard-section-line" />
+      </div>
 
       <div className="dashboard-body-grid">
         <Card
@@ -135,6 +145,11 @@ const DashboardPage = () => {
           </Card>
 
         </div>
+      </div>
+
+      <div className="dashboard-section">
+        <h2 className="dashboard-section-title">Analytics</h2>
+        <span className="dashboard-section-line" />
       </div>
 
       <DashboardCharts summary={summary} />

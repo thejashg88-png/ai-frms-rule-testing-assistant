@@ -3,12 +3,17 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  padding: 24px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.16), transparent 40%),
+    radial-gradient(circle at 80% 75%, rgba(6, 182, 212, 0.25), transparent 45%),
+    linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
 }
 
 .auth-container {
   background: var(--bg-primary);
-  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
   padding: 40px;
   width: 100%;

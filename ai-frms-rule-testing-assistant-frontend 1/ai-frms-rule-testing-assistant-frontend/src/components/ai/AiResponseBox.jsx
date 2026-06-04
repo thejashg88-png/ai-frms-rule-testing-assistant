@@ -3,13 +3,7 @@ import Loader from '../common/Loader'
 
 const AiResponseBox = ({ loading, content, error }) => {
   return (
-    <div style={{
-      background: 'var(--color-ai-response-bg)',
-      border: '1px solid var(--color-ai-border)',
-      borderRadius: 10,
-      padding: 20,
-      minHeight: 120,
-    }}>
+    <div className="ai-response-box">
       {loading && <Loader message="AI is thinking…" />}
       {error && (
         <p style={{ margin: 0, color: 'var(--danger)', fontSize: 14 }}>
