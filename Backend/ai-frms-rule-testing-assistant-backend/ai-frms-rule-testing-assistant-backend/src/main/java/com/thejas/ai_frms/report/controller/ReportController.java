@@ -1,5 +1,6 @@
 package com.thejas.ai_frms.report.controller;
 
+import com.thejas.ai_frms.audit.service.AuditLogService;
 import com.thejas.ai_frms.common.constants.ApiPathConstants;
 import com.thejas.ai_frms.common.dto.ApiResponse;
 import com.thejas.ai_frms.dashboard.dto.DashboardSummaryResponse;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,14 +31,10 @@ import java.util.Map;
 /**
  * REST controller for report generation and download.
  *
- * Provides two types of endpoints:
- *   1. JSON summary endpoints (/summary, /executions, /rules) — returns structured data
- *      for the frontend reports page; no file is generated.
- *   2. CSV download endpoints (/download/rules, /download/executions) — streams a CSV file
- *      as a binary download; uses Content-Disposition: attachment.
- *
- * POST endpoints (/execution, /scenario, /dashboard) generate PDF/Excel reports via ReportService.
- * These are currently separate from the GET summary endpoints above.
+ * Role access:
+ *   ADMIN  — generate, download, view all reports
+ *   TESTER — generate, download, view all reports
+ *   VIEWER — view summary/list reports (no download, no generate)
  */
 @RestController
 @RequestMapping(ApiPathConstants.REPORTS)
@@ -48,44 +46,52 @@ public class ReportController {
     private final DashboardService dashboardService;
     private final RuleRepository ruleRepository;
     private final TestExecutionRepository testExecutionRepository;
+    private final AuditLogService auditLogService;
 
     public ReportController(
             ReportService reportService,
             DashboardService dashboardService,
             RuleRepository ruleRepository,
-            TestExecutionRepository testExecutionRepository
+            TestExecutionRepository testExecutionRepository,
+            AuditLogService auditLogService
     ) {
         this.reportService = reportService;
         this.dashboardService = dashboardService;
         this.ruleRepository = ruleRepository;
         this.testExecutionRepository = testExecutionRepository;
+        this.auditLogService = auditLogService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/execution")
     public ResponseEntity<ApiResponse<ReportResponse>> generateExecutionReport(
             @RequestBody ReportRequest request
     ) {
         ReportResponse response = reportService.generateExecutionReport(request);
+        auditLogService.logReportDownload(request.getRequestedBy(), "EXECUTION");
         return ResponseEntity.ok(ApiResponse.success("Execution report generated successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/scenario")
     public ResponseEntity<ApiResponse<ReportResponse>> generateScenarioReport(
             @RequestBody ReportRequest request
     ) {
         ReportResponse response = reportService.generateScenarioReport(request);
+        auditLogService.logReportDownload(request.getRequestedBy(), "SCENARIO");
         return ResponseEntity.ok(ApiResponse.success("Scenario report generated successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @PostMapping("/dashboard")
     public ResponseEntity<ApiResponse<ReportResponse>> generateDashboardReport(
             @RequestBody ReportRequest request
     ) {
         ReportResponse response = reportService.generateDashboardReport(request);
+        auditLogService.logReportDownload(request.getRequestedBy(), "DASHBOARD");
         return ResponseEntity.ok(ApiResponse.success("Dashboard report generated successfully", response));
     }
 
-    /** GET /api/reports/summary — combined summary for frontend reports page */
     @GetMapping("/summary")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getReportSummary() {
         DashboardSummaryResponse summary = dashboardService.getDashboardSummary();
@@ -187,13 +193,14 @@ public class ReportController {
         return ResponseEntity.ok(ApiResponse.success("Rule report fetched successfully", report));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @GetMapping("/download/rules")
-    public ResponseEntity<byte[]> downloadRulesReport() {
-        log.info("[REPORT DOWNLOAD] Rules CSV download requested");
+    public ResponseEntity<byte[]> downloadRulesReport(
+            @RequestParam(required = false) String requestedBy
+    ) {
+        log.info("[REPORT DOWNLOAD] Rules CSV requested by={}", requestedBy);
         try {
             List<RuleEntity> rules = ruleRepository.findAll();
-            log.info("[REPORT DOWNLOAD] Rules count: {}", rules.size());
-
             StringBuilder csv = new StringBuilder();
             csv.append("ID,Rule Name,Rule Description,Rule Type,Action,Status,")
                .append("Txn Count,Txn Amount,Max Amount,Frequency Hours,Percentage Threshold,")
@@ -216,7 +223,7 @@ public class ReportController {
             }
 
             byte[] bytes = csv.toString().getBytes(StandardCharsets.UTF_8);
-            log.info("[REPORT DOWNLOAD] Rules CSV size: {} bytes", bytes.length);
+            auditLogService.logReportDownload(requestedBy, "RULES_CSV");
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"rules-report.csv\"")
@@ -229,14 +236,15 @@ public class ReportController {
         }
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','TESTER')")
     @GetMapping("/download/executions")
     @Transactional(readOnly = true)
-    public ResponseEntity<byte[]> downloadExecutionsReport() {
-        log.info("[REPORT DOWNLOAD] Executions CSV download requested");
+    public ResponseEntity<byte[]> downloadExecutionsReport(
+            @RequestParam(required = false) String requestedBy
+    ) {
+        log.info("[REPORT DOWNLOAD] Executions CSV requested by={}", requestedBy);
         try {
             List<TestExecutionEntity> executions = testExecutionRepository.findAll();
-            log.info("[REPORT DOWNLOAD] Executions count: {}", executions.size());
-
             StringBuilder csv = new StringBuilder();
             csv.append("ID,Execution Type,Status,Scenario Name,Test Case Name,")
                .append("Total,Passed,Failed,Error,Executed By,Started At,Completed At\n");
@@ -260,7 +268,7 @@ public class ReportController {
             }
 
             byte[] bytes = csv.toString().getBytes(StandardCharsets.UTF_8);
-            log.info("[REPORT DOWNLOAD] Executions CSV size: {} bytes", bytes.length);
+            auditLogService.logReportDownload(requestedBy, "EXECUTIONS_CSV");
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"executions-report.csv\"")

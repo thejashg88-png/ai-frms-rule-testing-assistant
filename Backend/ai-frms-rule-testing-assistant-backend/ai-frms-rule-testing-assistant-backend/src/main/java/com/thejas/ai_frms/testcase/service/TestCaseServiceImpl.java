@@ -1,5 +1,6 @@
 package com.thejas.ai_frms.testcase.service;
 
+import com.thejas.ai_frms.audit.service.AuditLogService;
 import com.thejas.ai_frms.common.dto.PageResponse;
 import com.thejas.ai_frms.common.enums.GeneratedBy;
 import com.thejas.ai_frms.common.enums.RuleStatus;
@@ -54,22 +55,26 @@ import java.util.List;
 public class TestCaseServiceImpl implements TestCaseService {
 
     private static final Logger log = LoggerFactory.getLogger(TestCaseServiceImpl.class);
+    private static final String ENTITY_TYPE = "TEST_CASE";
 
     private final TestCaseRepository testCaseRepository;
     private final TestScenarioRepository testScenarioRepository;
     private final TransactionRepository transactionRepository;
     private final TestExecutionResultRepository testExecutionResultRepository;
+    private final AuditLogService auditLogService;
 
     public TestCaseServiceImpl(
             TestCaseRepository testCaseRepository,
             TestScenarioRepository testScenarioRepository,
             TransactionRepository transactionRepository,
-            TestExecutionResultRepository testExecutionResultRepository
+            TestExecutionResultRepository testExecutionResultRepository,
+            AuditLogService auditLogService
     ) {
         this.testCaseRepository = testCaseRepository;
         this.testScenarioRepository = testScenarioRepository;
         this.transactionRepository = transactionRepository;
         this.testExecutionResultRepository = testExecutionResultRepository;
+        this.auditLogService = auditLogService;
     }
 
     @Override
@@ -116,6 +121,14 @@ public class TestCaseServiceImpl implements TestCaseService {
 
         log.info("[TEST CASE CREATE] Saved test case id: {}", savedEntity.getTestCaseId());
 
+        auditLogService.logCreate(
+                request.getCreatedBy(),
+                ENTITY_TYPE,
+                savedEntity.getTestCaseId(),
+                savedEntity.getTestCaseName(),
+                TestCaseMapper.toResponse(savedEntity)
+        );
+
         return TestCaseMapper.toResponse(savedEntity);
     }
 
@@ -161,6 +174,9 @@ public class TestCaseServiceImpl implements TestCaseService {
             throw new BadRequestException("Test case name already exists: " + request.getTestCaseName());
         }
 
+        // Capture old state before applying changes
+        TestCaseResponse oldState = TestCaseMapper.toResponse(entity);
+
         TestScenarioEntity scenario = null;
         if (request.getScenarioId() != null) {
             scenario = getScenarioEntity(request.getScenarioId());
@@ -172,8 +188,17 @@ public class TestCaseServiceImpl implements TestCaseService {
         }
 
         TestCaseMapper.updateEntity(entity, request, scenario, transaction);
-
         TestCaseEntity updatedEntity = testCaseRepository.save(entity);
+
+        auditLogService.logUpdate(
+                request.getModifiedBy(),
+                ENTITY_TYPE,
+                testCaseId,
+                updatedEntity.getTestCaseName(),
+                oldState,
+                TestCaseMapper.toResponse(updatedEntity)
+        );
+
         return TestCaseMapper.toResponse(updatedEntity);
     }
 
@@ -213,6 +238,17 @@ public class TestCaseServiceImpl implements TestCaseService {
         entity.setStatus(status);
 
         TestCaseEntity updatedEntity = testCaseRepository.save(entity);
+
+        String action = status == RuleStatus.INACTIVE ? "INACTIVATE" : "ACTIVATE";
+        auditLogService.logEvent(
+                null,
+                action,
+                ENTITY_TYPE,
+                testCaseId,
+                entity.getTestCaseName(),
+                String.format("User changed test case '%s' status to %s", entity.getTestCaseName(), status)
+        );
+
         return TestCaseMapper.toResponse(updatedEntity);
     }
 
@@ -231,10 +267,30 @@ public class TestCaseServiceImpl implements TestCaseService {
             entity.setStatus(RuleStatus.INACTIVE);
             testCaseRepository.save(entity);
             log.info("[TEST CASE DELETE] Completed soft delete for testCaseId={}", testCaseId);
+
+            auditLogService.logDelete(
+                    null,
+                    "INACTIVATE",
+                    ENTITY_TYPE,
+                    testCaseId,
+                    entity.getTestCaseName(),
+                    TestCaseMapper.toResponse(entity)
+            );
+
             return "Test case marked as deleted because execution history exists";
         }
 
         log.info("[TEST CASE DELETE] Delete mode=hard (no execution history)");
+
+        auditLogService.logDelete(
+                null,
+                "DELETE",
+                ENTITY_TYPE,
+                testCaseId,
+                entity.getTestCaseName(),
+                TestCaseMapper.toResponse(entity)
+        );
+
         testCaseRepository.delete(entity);
         log.info("[TEST CASE DELETE] Completed delete for testCaseId={}", testCaseId);
         return "Test case deleted successfully";

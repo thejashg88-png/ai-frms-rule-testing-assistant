@@ -5,7 +5,8 @@ package com.thejas.ai_frms.common.constants;
  *
  * Rule/Scenario/TestCase status:
  *   ACTIVE   — included in risk evaluation and scenario execution
- *   INACTIVE — excluded from evaluation; used as soft-delete for test cases with execution history
+ *   INACTIVE — temporarily disabled; still visible in filtered list views
+ *   DELETED  — soft-deleted; permanently hidden from all default list views (rules only)
  *
  * Execution status:
  *   PENDING   — not yet started
@@ -22,8 +23,11 @@ public final class StatusConstants {
     // Rule, scenario, test case is active and will be evaluated
     public static final String ACTIVE = "ACTIVE";
 
-    // Rule, scenario, or test case is disabled; test cases with execution history are soft-deleted to INACTIVE
+    // Rule, scenario, or test case is disabled; still appears when filtering by INACTIVE
     public static final String INACTIVE = "INACTIVE";
+
+    // Rule is soft-deleted (referenced so cannot hard-delete); hidden from all default list views
+    public static final String DELETED = "DELETED";
 
     // Test execution result: expected action matched actual action
     public static final String PASSED = "PASSED";

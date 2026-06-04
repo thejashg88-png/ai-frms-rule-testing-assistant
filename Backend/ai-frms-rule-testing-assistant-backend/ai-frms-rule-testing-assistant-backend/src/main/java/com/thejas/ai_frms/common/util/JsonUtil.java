@@ -6,7 +6,10 @@ import com.thejas.ai_frms.common.exception.BadRequestException;
 
 public final class JsonUtil {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    // findAndRegisterModules() registers jackson-datatype-jsr310 (LocalDateTime, LocalDate, etc.)
+    // and any other Jackson modules on the classpath — required for LocalDateTime serialization.
+    // Without this, plain new ObjectMapper() cannot serialize LocalDateTime and throws JsonProcessingException.
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
 
     private JsonUtil() {
     }
@@ -15,7 +18,7 @@ public final class JsonUtil {
         try {
             return OBJECT_MAPPER.writeValueAsString(object);
         } catch (JsonProcessingException exception) {
-            throw new BadRequestException("Unable to convert object to JSON");
+            throw new BadRequestException("Unable to convert object to JSON: " + exception.getOriginalMessage());
         }
     }
 

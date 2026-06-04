@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getToken } from '../services/tokenService'
+import { getToken, tokenService } from '../services/tokenService'
 
 // Base URL is set via VITE_API_BASE_URL in .env; falls back to local Spring Boot default.
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081/api'
@@ -15,14 +15,22 @@ const axiosInstance = axios.create({
   },
 })
 
-// Attach JWT from localStorage before every request.
-// Token is stored by tokenService after login; absent when the user is logged out.
+// Attach JWT and actor username before every request.
+// Token and user are stored by tokenService after login.
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = getToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+
+    const user = tokenService.getUser()
+    const username = user?.username || user?.fullName || user?.email || null
+    console.log('[API Request Actor]', username)
+    if (username) {
+      config.headers['X-Actor-Username'] = username
+    }
+
     return config
   },
   (error) => {
@@ -30,12 +38,18 @@ axiosInstance.interceptors.request.use(
   }
 )
 
-// Global 401 handler — redirect to /login when the token has expired or is invalid.
+// Global response error handler.
+// 401 → redirect to login; 403 → attach a clear permission-denied message.
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       window.location.href = '/login'
+    }
+    if (error.response?.status === 403) {
+      error.message =
+        error.response?.data?.message ||
+        'You do not have permission to perform this action.'
     }
     return Promise.reject(error)
   }

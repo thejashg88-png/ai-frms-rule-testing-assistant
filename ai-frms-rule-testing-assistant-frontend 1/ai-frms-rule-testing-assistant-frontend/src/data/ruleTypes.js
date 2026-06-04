@@ -24,4 +24,16 @@ export const getRuleTypeLabel = (value) => {
   return found ? found.label : value || 'Unknown'
 }
 
+export const HISTORY_REQUIRED_RULE_TYPES = [
+  'HIGH_FREQ_TXN',
+  'SEQUENTIAL_TXN',
+  'STRUCTURING',
+  'UNUSUAL_AMT',
+  'INCONSISTENT_MCC',
+  'ROUND_AMT_TXN',
+  'TXN_VELOCITY',
+]
+
+export const requiresHistory = (ruleType) => HISTORY_REQUIRED_RULE_TYPES.includes(ruleType)
+
 export default RULE_TYPES

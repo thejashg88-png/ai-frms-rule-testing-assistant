@@ -45,7 +45,7 @@ public class UserEntity {
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
-        if (this.role == null)   this.role   = "USER";
+        if (this.role == null)   this.role   = "TESTER";
         if (this.status == null) this.status = "ACTIVE";
     }
 

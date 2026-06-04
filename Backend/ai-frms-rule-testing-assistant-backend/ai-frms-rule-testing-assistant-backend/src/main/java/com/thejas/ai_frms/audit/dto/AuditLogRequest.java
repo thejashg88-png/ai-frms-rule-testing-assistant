@@ -14,6 +14,8 @@ public class AuditLogRequest {
     private Long entityId;
     private String description;
     private String performedBy;
+    private String oldValue;
+    private String newValue;
     private String ipAddress;
     private String userAgent;
 
@@ -63,6 +65,22 @@ public class AuditLogRequest {
 
     public void setPerformedBy(String performedBy) {
         this.performedBy = performedBy;
+    }
+
+    public String getOldValue() {
+        return oldValue;
+    }
+
+    public void setOldValue(String oldValue) {
+        this.oldValue = oldValue;
+    }
+
+    public String getNewValue() {
+        return newValue;
+    }
+
+    public void setNewValue(String newValue) {
+        this.newValue = newValue;
     }
 
     public String getIpAddress() {

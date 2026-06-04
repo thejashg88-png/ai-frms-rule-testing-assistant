@@ -26,5 +26,5 @@ public interface TestScenarioService {
 
     TestScenarioResponse changeScenarioStatus(Long scenarioId, RuleStatus status);
 
-    void deleteScenario(Long scenarioId);
+    String deleteScenario(Long scenarioId);
 }

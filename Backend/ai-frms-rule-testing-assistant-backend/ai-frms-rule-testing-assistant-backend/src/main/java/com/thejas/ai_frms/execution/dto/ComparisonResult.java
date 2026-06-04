@@ -36,4 +36,16 @@ public class ComparisonResult {
     private String ruleType;          // which rule type was evaluated
     private BigDecimal inputAmount;   // the amount that was tested
     private String engineNote;        // additional context from rule engine (e.g., baseline evaluation details)
+
+    // Detailed explanation of why the rule triggered or did not trigger
+    private RuleEvaluationExplanationResponse ruleExplanation;
+
+    public RuleEvaluationExplanationResponse getRuleExplanation() { return ruleExplanation; }
+    public void setRuleExplanation(RuleEvaluationExplanationResponse ruleExplanation) { this.ruleExplanation = ruleExplanation; }
+
+    // Step-by-step execution trace — populated by RuleExecutionEngine and ResultComparisonService
+    private List<ExecutionTraceStepResponse> executionTrace;
+
+    public List<ExecutionTraceStepResponse> getExecutionTrace() { return executionTrace; }
+    public void setExecutionTrace(List<ExecutionTraceStepResponse> executionTrace) { this.executionTrace = executionTrace; }
 }

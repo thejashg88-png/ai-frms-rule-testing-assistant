@@ -4,6 +4,7 @@ import Table from '../common/Table'
 import Button from '../common/Button'
 import Badge from '../common/Badge'
 import { STATUSES } from '../../data/statuses'
+import { useAuth } from '../../hooks/useAuth'
 
 const ACTION_COLORS = {
   ACCEPT:  { bg: '#dcfce7', color: '#16a34a' },
@@ -13,7 +14,11 @@ const ACTION_COLORS = {
 
 const TestCaseTable = ({ testCases = [], loading, onDelete, deletingId, confirmId, onConfirmDelete, onCancelDelete }) => {
   const navigate = useNavigate()
+  const { isAdmin, isTester } = useAuth()
   const rows = Array.isArray(testCases) ? testCases : []
+
+  const canEditTestCase  = isAdmin || isTester
+  const canDeleteTestCase = isAdmin
 
   const columns = [
     {
@@ -55,8 +60,8 @@ const TestCaseTable = ({ testCases = [], loading, onDelete, deletingId, confirmI
       key: 'id',
       label: 'Actions',
       width: '220px',
-      render: (id, row) => {
-        if (confirmId === id) {
+      render: (id) => {
+        if (canDeleteTestCase && confirmId === id) {
           return (
             <div style={{ display: 'flex', gap: 6 }}>
               <Button variant="danger" size="sm" loading={deletingId === id} onClick={() => onConfirmDelete(id)}>Confirm</Button>
@@ -67,8 +72,8 @@ const TestCaseTable = ({ testCases = [], loading, onDelete, deletingId, confirmI
         return (
           <div style={{ display: 'flex', gap: 6 }}>
             <Button variant="primary" size="sm" onClick={() => navigate(`/testcases/${id}`)}>View</Button>
-            <Button variant="outline" size="sm" onClick={() => navigate(`/testcases/${id}/edit`)}>Edit</Button>
-            <Button variant="ghost" size="sm" onClick={() => onDelete(id)}>Delete</Button>
+            {canEditTestCase   && <Button variant="outline" size="sm" onClick={() => navigate(`/testcases/${id}/edit`)}>Edit</Button>}
+            {canDeleteTestCase && <Button variant="ghost"   size="sm" onClick={() => onDelete(id)}>Delete</Button>}
           </div>
         )
       },

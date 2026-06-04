@@ -8,6 +8,7 @@ import Pagination from '../../components/common/Pagination'
 import ScenarioTable from '../../components/scenarios/ScenarioTable'
 import ScenarioFilter from '../../components/scenarios/ScenarioFilter'
 import { useToast } from '../../hooks/useToast'
+import { useAuth } from '../../hooks/useAuth'
 import useClientPagination from '../../hooks/useClientPagination'
 import scenarioService from '../../services/scenarioService'
 import '../../styles/pages.css'
@@ -15,6 +16,7 @@ import '../../styles/pages.css'
 const ScenariosPage = () => {
   const navigate = useNavigate()
   const { addToast } = useToast()
+  const { isAdmin } = useAuth()
 
   // All records loaded once from backend
   const [allScenarios, setAllScenarios] = useState([])
@@ -91,7 +93,7 @@ const ScenariosPage = () => {
       <PageHeader
         title="Scenarios"
         subtitle={subtitleText}
-        actions={<Button variant="primary" onClick={() => navigate('/scenarios/create')}>+ Create Scenario</Button>}
+        actions={isAdmin && <Button variant="primary" onClick={() => navigate('/scenarios/create')}>+ Create Scenario</Button>}
       />
 
       <ScenarioFilter filters={filters} onChange={handleFilterChange} />

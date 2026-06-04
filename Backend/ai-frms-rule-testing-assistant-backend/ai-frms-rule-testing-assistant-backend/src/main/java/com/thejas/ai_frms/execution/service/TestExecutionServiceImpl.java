@@ -1,5 +1,6 @@
 package com.thejas.ai_frms.execution.service;
 
+import com.thejas.ai_frms.audit.service.AuditLogService;
 import com.thejas.ai_frms.common.dto.PageResponse;
 import com.thejas.ai_frms.common.enums.ExecutionStatus;
 import com.thejas.ai_frms.common.exception.BadRequestException;
@@ -68,6 +69,7 @@ public class TestExecutionServiceImpl implements TestExecutionService {
     private final TestScenarioRepository testScenarioRepository;
     private final RuleExecutionEngine ruleExecutionEngine;
     private final ResultComparisonService resultComparisonService;
+    private final AuditLogService auditLogService;
 
     public TestExecutionServiceImpl(
             TestExecutionRepository testExecutionRepository,
@@ -75,7 +77,8 @@ public class TestExecutionServiceImpl implements TestExecutionService {
             TestCaseRepository testCaseRepository,
             TestScenarioRepository testScenarioRepository,
             RuleExecutionEngine ruleExecutionEngine,
-            ResultComparisonService resultComparisonService
+            ResultComparisonService resultComparisonService,
+            AuditLogService auditLogService
     ) {
         this.testExecutionRepository = testExecutionRepository;
         this.testExecutionResultRepository = testExecutionResultRepository;
@@ -83,6 +86,7 @@ public class TestExecutionServiceImpl implements TestExecutionService {
         this.testScenarioRepository = testScenarioRepository;
         this.ruleExecutionEngine = ruleExecutionEngine;
         this.resultComparisonService = resultComparisonService;
+        this.auditLogService = auditLogService;
     }
 
     @Override
@@ -112,6 +116,22 @@ public class TestExecutionServiceImpl implements TestExecutionService {
                 testExecutionResultRepository.findByExecutionExecutionIdOrderByExecutedAtAsc(
                         completedExecution.getExecutionId()
                 );
+
+        String description = String.format(
+                "User %s ran test case execution for '%s'. Result=%s.",
+                resolveActor(request.getExecutedBy()),
+                testCase.getTestCaseName(),
+                completedExecution.getExecutionStatus()
+        );
+
+        auditLogService.logEvent(
+                request.getExecutedBy(),
+                "RUN_EXECUTION",
+                "EXECUTION",
+                completedExecution.getExecutionId(),
+                testCase.getTestCaseName(),
+                description
+        );
 
         return TestExecutionMapper.toExecutionResponse(completedExecution, results);
     }
@@ -171,6 +191,24 @@ public class TestExecutionServiceImpl implements TestExecutionService {
                 testExecutionResultRepository.findByExecutionExecutionIdOrderByExecutedAtAsc(
                         completedExecution.getExecutionId()
                 );
+
+        String description = String.format(
+                "User %s ran scenario execution for '%s'. Passed=%d, Failed=%d, Error=%d.",
+                resolveActor(request.getExecutedBy()),
+                scenario.getScenarioName(),
+                completedExecution.getPassedCount(),
+                completedExecution.getFailedCount(),
+                completedExecution.getErrorCount()
+        );
+
+        auditLogService.logEvent(
+                request.getExecutedBy(),
+                "RUN_EXECUTION",
+                "EXECUTION",
+                completedExecution.getExecutionId(),
+                scenario.getScenarioName(),
+                description
+        );
 
         return TestExecutionMapper.toExecutionResponse(completedExecution, results);
     }
@@ -272,7 +310,28 @@ public class TestExecutionServiceImpl implements TestExecutionService {
             result.setMessage(comparisonResult.getMessage());
             result.setFailureReason(comparisonResult.getFailureReason());
             result.setExpectedOutcome(comparisonResult.getExpectedOutcome());
-            result.setComparisonResultJson(JsonUtil.toJson(comparisonResult));
+
+            // Defensive JSON serialization: if ruleExplanation causes serialization failure,
+            // retry without it so the execution result (PASSED/FAILED) is never lost.
+            String comparisonJson = null;
+            try {
+                comparisonJson = JsonUtil.toJson(comparisonResult);
+                log.info("[RULE EXPLANATION] serialization success=true for testCaseId={}", testCase.getTestCaseId());
+            } catch (Exception jsonEx) {
+                log.warn("[EXECUTION] comparisonResult serialization failed for testCaseId={} ruleType={}: {}. Retrying without ruleExplanation.",
+                        testCase.getTestCaseId(),
+                        comparisonResult.getRuleType(),
+                        jsonEx.getMessage());
+                comparisonResult.setRuleExplanation(null);
+                try {
+                    comparisonJson = JsonUtil.toJson(comparisonResult);
+                    log.info("[RULE EXPLANATION] serialization success=true (fallback, no explanation) for testCaseId={}", testCase.getTestCaseId());
+                } catch (Exception fallbackEx) {
+                    log.error("[EXECUTION] Fallback serialization also failed for testCaseId={}: {}",
+                            testCase.getTestCaseId(), fallbackEx.getMessage());
+                }
+            }
+            result.setComparisonResultJson(comparisonJson);
             result.setExecutedAt(LocalDateTime.now());
 
             return result;
@@ -326,6 +385,10 @@ public class TestExecutionServiceImpl implements TestExecutionService {
         } else {
             execution.setExecutionStatus(ExecutionStatus.PASSED);
         }
+    }
+
+    private String resolveActor(String actor) {
+        return (actor != null && !actor.isBlank()) ? actor : "SYSTEM";
     }
 
     private TestCaseEntity getTestCaseEntity(Long testCaseId) {

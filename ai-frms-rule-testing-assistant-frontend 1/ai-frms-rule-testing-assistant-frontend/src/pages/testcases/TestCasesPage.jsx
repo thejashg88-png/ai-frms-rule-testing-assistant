@@ -8,6 +8,7 @@ import ErrorMessage from '../../components/common/ErrorMessage'
 import Pagination from '../../components/common/Pagination'
 import TestCaseTable from '../../components/testcases/TestCaseTable'
 import { useToast } from '../../hooks/useToast'
+import { useAuth } from '../../hooks/useAuth'
 import useClientPagination from '../../hooks/useClientPagination'
 import testCaseService from '../../services/testCaseService'
 import '../../styles/pages.css'
@@ -15,6 +16,7 @@ import '../../styles/pages.css'
 const TestCasesPage = () => {
   const navigate = useNavigate()
   const { addToast } = useToast()
+  const { isAdmin, isTester } = useAuth()
 
   // All records loaded once from backend
   const [allTestCases, setAllTestCases] = useState([])
@@ -87,7 +89,7 @@ const TestCasesPage = () => {
       <PageHeader
         title="Test Cases"
         subtitle={subtitleText}
-        actions={<Button variant="primary" onClick={() => navigate('/testcases/create')}>+ Create Test Case</Button>}
+        actions={(isAdmin || isTester) && <Button variant="primary" onClick={() => navigate('/testcases/create')}>+ Create Test Case</Button>}
       />
 
       <div className="rules-filters">

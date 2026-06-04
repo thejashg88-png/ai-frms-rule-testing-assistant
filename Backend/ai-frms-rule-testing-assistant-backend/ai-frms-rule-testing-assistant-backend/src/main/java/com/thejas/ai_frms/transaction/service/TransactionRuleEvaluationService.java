@@ -1,5 +1,6 @@
 package com.thejas.ai_frms.transaction.service;
 
+import com.thejas.ai_frms.execution.dto.RuleEvaluationExplanationResponse;
 import com.thejas.ai_frms.rule.entity.RuleEntity;
 import com.thejas.ai_frms.transaction.dto.RuleEvaluationResult;
 import org.slf4j.Logger;
@@ -105,9 +106,36 @@ public class TransactionRuleEvaluationService {
             String action = rule.getAction() != null ? rule.getAction().name() : "MONITOR";
             String reason = "Transaction amount " + amount.toPlainString()
                     + " is greater than " + action.toLowerCase() + " threshold " + maxAmount.toPlainString();
-            return new RuleEvaluationResult(action, rule.getRuleName(), rule.getRuleType(), action, reason);
+            RuleEvaluationResult result = new RuleEvaluationResult(action, rule.getRuleName(), rule.getRuleType(), action, reason);
+            result.setRuleExplanation(buildSingleLargeTxExplanation(rule, amount, maxAmount, true, action));
+            return result;
         }
+
+        // Rule matched the type but did not trigger — return a "not triggered" result for explanation
+        // (null return means "skip this rule", so we only build explanation for triggered rules in the transaction list)
         return null;
+    }
+
+    private RuleEvaluationExplanationResponse buildSingleLargeTxExplanation(
+            RuleEntity rule, BigDecimal amount, BigDecimal maxAmount, boolean triggered, String action) {
+        RuleEvaluationExplanationResponse expl = new RuleEvaluationExplanationResponse();
+        expl.setRuleType(rule.getRuleType());
+        expl.setRuleName(rule.getRuleName());
+        expl.setActualAmount(amount);
+        expl.setMaxAmount(maxAmount);
+        expl.setThresholdAmount(maxAmount);
+        expl.setActualAction(action);
+        expl.setTriggered(triggered);
+        if (triggered) {
+            expl.setRuleReason("Transaction amount " + amount.toPlainString()
+                    + " is greater than configured maxAmount " + maxAmount.toPlainString() + ".");
+            expl.setResultExplanation("Rule triggered because the transaction amount exceeds the configured maximum threshold.");
+        } else {
+            expl.setRuleReason("Transaction amount " + amount.toPlainString()
+                    + " is not greater than configured maxAmount " + maxAmount.toPlainString() + ".");
+            expl.setResultExplanation("Rule did not trigger because the transaction amount is within the configured maximum threshold.");
+        }
+        return expl;
     }
 
     private RuleEvaluationResult acceptResult() {

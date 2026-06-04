@@ -42,12 +42,16 @@ const AiFailureAnalysis = () => {
 
     try {
       const selectedExecution = executions.find((e) => e.id === Number(selectedId))
-      const firstResult = selectedExecution?.results?.[0] || {}
-      const comparison  = firstResult?.comparisonResult   || {}
+      const firstResult  = selectedExecution?.results?.[0] || {}
+      const comparison   = firstResult?.comparisonResult   || {}
+      const explanation  = firstResult?.ruleExplanation    || comparison?.ruleExplanation || {}
+      const trace        = firstResult?.executionTrace     || comparison?.executionTrace  || []
 
       console.log('[AI Failure Analysis Selected Execution]', selectedExecution)
       console.log('[AI Failure Analysis First Result]', firstResult)
       console.log('[AI Failure Analysis Comparison]', comparison)
+      console.log('[AI Failure Analysis Rule Explanation]', explanation)
+      console.log('[AI Failure Analysis Execution Trace]', trace)
 
       // ruleType must come from the actual execution result — never hardcoded.
       // Different rule types produce different failure patterns, so the AI needs
@@ -124,6 +128,18 @@ const AiFailureAnalysis = () => {
         return
       }
 
+      // Mask card number before sending — last 4 digits are sufficient for AI context.
+      const rawInputData = selectedExecution.inputData || firstResult.inputData || {}
+      const inputData = rawInputData.cardNumber
+        ? { ...rawInputData, cardNumber: '****' + String(rawInputData.cardNumber).slice(-4) }
+        : rawInputData
+
+      const failureReason =
+        firstResult.failureReason ||
+        comparison.failureReason  ||
+        explanation.ruleReason    ||
+        ''
+
       const payload = {
         executionId:  selectedExecution.executionId || selectedExecution.id,
         testCaseName:
@@ -135,11 +151,21 @@ const AiFailureAnalysis = () => {
         ruleType,
         expectedResult,
         actualResult:   actualAction,
-        inputData:      selectedExecution.inputData || firstResult.inputData || {},
+        inputData,
         executionLogs,
+        ruleConfig:                  firstResult.ruleConfig    || comparison.ruleConfig    || {},
+        testCaseInput:               firstResult.testCaseInput || comparison.testCaseInput || firstResult.inputData || comparison.inputData || rawInputData,
+        failureReason,
+        matchedCount:                explanation.matchedCount    ?? null,
+        requiredCount:               explanation.requiredCount   ?? null,
+        historicalTransactionCount:  explanation.historicalCount ?? null,
+        currentCount:                explanation.currentCount    ?? null,
+        frequencyWindow:             explanation.frequencyWindow ?? null,
+        ruleExplanation:             explanation,
+        executionTrace:              trace,
       }
 
-      console.log('[AI Failure Analysis Payload]', payload)
+      console.log('[AI Failure Enriched Payload]', payload)
 
       const res = await aiService.analyzeFailure(payload)
       setResponse(res)

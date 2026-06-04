@@ -4,6 +4,13 @@ import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * Audit log entity for tracking all significant user and system actions.
+ *
+ * oldValue and newValue store JSON snapshots of entity state before and after a change.
+ * Sensitive fields (cardNumber, track2Data, PAN) are masked before storage.
+ * Audit logging must never break the main business flow — all save errors are caught and logged.
+ */
 @Entity
 @Table(name = "frms_audit_logs")
 public class AuditLogEntity {
@@ -30,6 +37,14 @@ public class AuditLogEntity {
 
     @Column(name = "performed_by", length = 100)
     private String performedBy;
+
+    // Old state of the entity before the action — stored as masked JSON
+    @Column(name = "old_value", columnDefinition = "TEXT")
+    private String oldValue;
+
+    // New state of the entity after the action — stored as masked JSON
+    @Column(name = "new_value", columnDefinition = "TEXT")
+    private String newValue;
 
     @Column(name = "ip_address", length = 100)
     private String ipAddress;
@@ -99,6 +114,22 @@ public class AuditLogEntity {
 
     public void setPerformedBy(String performedBy) {
         this.performedBy = performedBy;
+    }
+
+    public String getOldValue() {
+        return oldValue;
+    }
+
+    public void setOldValue(String oldValue) {
+        this.oldValue = oldValue;
+    }
+
+    public String getNewValue() {
+        return newValue;
+    }
+
+    public void setNewValue(String newValue) {
+        this.newValue = newValue;
     }
 
     public String getIpAddress() {

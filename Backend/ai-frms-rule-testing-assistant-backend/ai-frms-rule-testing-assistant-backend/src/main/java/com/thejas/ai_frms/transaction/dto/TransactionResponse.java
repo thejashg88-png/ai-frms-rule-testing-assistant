@@ -1,5 +1,6 @@
 package com.thejas.ai_frms.transaction.dto;
 
+import com.thejas.ai_frms.execution.dto.RuleEvaluationExplanationResponse;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -209,4 +210,9 @@ public class TransactionResponse {
 
     public String getRiskReason() { return riskReason; }
     public void setRiskReason(String riskReason) { this.riskReason = riskReason; }
+
+    // Detailed rule evaluation explanation for the highest-severity triggered rule
+    private RuleEvaluationExplanationResponse ruleExplanation;
+    public RuleEvaluationExplanationResponse getRuleExplanation() { return ruleExplanation; }
+    public void setRuleExplanation(RuleEvaluationExplanationResponse ruleExplanation) { this.ruleExplanation = ruleExplanation; }
 }

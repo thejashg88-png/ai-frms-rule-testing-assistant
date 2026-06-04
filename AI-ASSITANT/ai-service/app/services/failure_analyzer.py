@@ -16,11 +16,31 @@ class FailureAnalyzerService:
         self._llm = get_llm_provider()
 
     async def analyze(self, request: AnalyzeFailureRequest) -> dict:
-        """Returns possibleReasons, debuggingSteps, recommendedFix, and riskImpact."""
+        """Returns summary, rootCause, possibleReasons, debuggingSteps, recommendedFix, riskImpact, confidence."""
         logger.info(
-            f"Analyzing failure | case={request.testCaseName} "
+            f"[FAILURE ANALYSIS] ruleType={request.ruleType} "
+            f"| case={request.testCaseName} "
             f"| expected={request.expectedResult} | actual={request.actualResult}"
         )
+        if request.matchedCount is not None:
+            logger.info(f"[FAILURE ANALYSIS] matchedCount={request.matchedCount}")
+        if request.historicalTransactionCount is not None:
+            logger.info(f"[FAILURE ANALYSIS] historicalCount={request.historicalTransactionCount}")
+        if request.requiredCount is not None:
+            logger.info(f"[FAILURE ANALYSIS] requiredCount={request.requiredCount}")
+        if request.frequencyWindow:
+            logger.info(f"[FAILURE ANALYSIS] frequencyWindow={request.frequencyWindow}")
+
+        has_enriched = any([
+            request.ruleConfig,
+            request.matchedCount is not None,
+            request.requiredCount is not None,
+            request.historicalTransactionCount is not None,
+            request.executionTrace,
+            request.failureReason,
+        ])
+        logger.info(f"[FAILURE ANALYSIS] prompt uses enriched context={has_enriched}")
+
         result = await self._llm.analyze_failure(request)
         logger.info(f"Failure analysis complete | reasons={len(result.get('possibleReasons', []))}")
         return result

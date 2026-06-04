@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import Table from '../common/Table'
 import Button from '../common/Button'
 import Badge from '../common/Badge'
+import { useAuth } from '../../hooks/useAuth'
 
 const ScenarioTable = ({ scenarios = [], loading, onDelete, deletingId, confirmId, onConfirmDelete, onCancelDelete }) => {
   const navigate = useNavigate()
+  const { isAdmin } = useAuth()
   const rows = Array.isArray(scenarios) ? scenarios : []
 
   const columns = [
@@ -50,7 +52,7 @@ const ScenarioTable = ({ scenarios = [], loading, onDelete, deletingId, confirmI
       label: 'Actions',
       width: '210px',
       render: (id) => {
-        if (confirmId === id) {
+        if (isAdmin && confirmId === id) {
           return (
             <div style={{ display: 'flex', gap: 6 }}>
               <Button variant="danger" size="sm" loading={deletingId === id} onClick={() => onConfirmDelete(id)}>Confirm</Button>
@@ -61,8 +63,8 @@ const ScenarioTable = ({ scenarios = [], loading, onDelete, deletingId, confirmI
         return (
           <div style={{ display: 'flex', gap: 6 }}>
             <Button variant="outline" size="sm" onClick={() => navigate(`/scenarios/${id}`)}>View</Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate(`/scenarios/${id}/edit`)}>Edit</Button>
-            <Button variant="ghost" size="sm" onClick={() => onDelete(id)}>Delete</Button>
+            {isAdmin && <Button variant="ghost" size="sm" onClick={() => navigate(`/scenarios/${id}/edit`)}>Edit</Button>}
+            {isAdmin && <Button variant="ghost" size="sm" onClick={() => onDelete(id)}>Delete</Button>}
           </div>
         )
       },

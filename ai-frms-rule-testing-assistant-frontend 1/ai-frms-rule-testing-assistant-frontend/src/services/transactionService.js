@@ -209,6 +209,13 @@ export const transactionService = {
     try { return await transactionApi.delete(id) }
     catch (err) { throw new Error(errorHandlerService.getErrorMessage(err)) }
   },
+
+  generateRequiredHistory: async (testCaseId) => {
+    console.log('[Generate History] testCaseId', testCaseId)
+    const response = await transactionApi.generateHistory({ testCaseId })
+    console.log('[Generate History] response', response)
+    return response?.data || response
+  },
 }
 
 export default transactionService
