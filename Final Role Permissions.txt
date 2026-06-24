@@ -1,12 +1,7 @@
 
 
----
-JWT Claims
 
-{ "sub": "admin", "role": "ADMIN", "iat": ..., "exp": ... }
 
----
-Seed Users (auto-created on startup)
 
 ┌──────────┬───────────┬────────┬───────────────────┐
 │ Username │ Password  │  Role  │       Email       │
